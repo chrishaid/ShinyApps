@@ -1,0 +1,37 @@
+Loading libraries for global environment
+
+Attaching package: ‘lubridate’
+
+The following objects are masked from ‘package:data.table’:
+
+    hour, mday, month, quarter, wday, week, yday, year
+
+Loading required package: plyr
+
+Attaching package: ‘plyr’
+
+The following object is masked from ‘package:lubridate’:
+
+    here
+
+
+Attaching package: ‘reshape’
+
+The following objects are masked from ‘package:plyr’:
+
+    rename, round_any
+
+The following object is masked from ‘package:lubridate’:
+
+    stamp
+
+Loading helper libraries
+Reading and munging attendance data
+Translating SchoolIDs to school initials . . . 
+Change intials from character to factor with new order . . . 
+Creating output tables
+Getting first day of school and current day information
+Error in lubridate::month(date.title, label = TRUE, abbr = FALSE) : 
+  object 'date.title' not found
+Calls: runApp ... withVisible -> eval -> eval -> paste -> <Anonymous>
+Execution halted

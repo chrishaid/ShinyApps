@@ -1,0 +1,7 @@
+Error in source(globalR, local = FALSE) : 
+  /home/chaid/ShinyApps/war/global.R:15:35: unexpected symbol
+14: source('lib/attendence_helpers.R', local=TRUE)
+15: source('lib/transfer_helpers.R',. local
+                                      ^
+Calls: runApp -> startAppDir -> source
+Execution halted
