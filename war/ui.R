@@ -4,14 +4,37 @@
 
 library(shiny)
 
+
+
+
+
 shinyUI(
   bootstrapPage(
+   # includeCSS("/var/www/css//bootstrap.min.css"),
+    #includeScript("/var/www/js/bootstrap.min.js"),
     div(class="container-fluid",
         h3(paste("as of", title.date)),
+       div(class="alert alert-warning alert-dismissable", 
+           strong("Note well"), 
+           " that this page can take some time to load.  Please be patient.",
+        tag("button", 
+            list("class"="close", 
+                 "data-dismiss"="alert", 
+                 "aria-hidden"="true",
+                 HTML("&times;")
+                )
+           )
+        ),
         tabsetPanel(
           tabPanel(title="Attendance",
-                   h4("Powerschool vs. Impact YTD Attendance"),
+                   h4("Powerschool vs. IMPACT* YTD Attendance"),
                    htmlOutput("impact"),
+                   p(tags$small("*IMPACT data is only updated on the first day of each school week. ",  
+                                "Consequently, the ",
+                                strong("Difference"),
+                                "column will show wider discrepencies as the week progresses"
+                               )
+                    ),
                    br(),
                    tabsetPanel(
                      tabPanel(title="Daily",
