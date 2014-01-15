@@ -5,6 +5,12 @@
 library(shiny)
 
 
+lastXweeks<-ymd(as.character(floor_date(today() -weeks(6), 
+                                        unit="week")+1))
+last6weeks <- as.character(lastXweeks)
+thisweek <- as.character(today())
+firstweek <- as.character(floor_date(DailyEnrollAttend[,min(WeekOfDate)]))
+
 
 
 
@@ -41,6 +47,13 @@ shinyUI(
                               h4("Daily Enrollment and Attendance by School"),
                               tabsetPanel(
                                 tabPanel(title="Visualization", 
+                                         dateRangeInput("attDates", 
+                                                        "Weeks:",
+                                                        start=last6weeks,
+                                                        end=thisweek,
+                                                        min=firstweek,
+                                                        max=thisweek
+                                                        ),
                                          plotOutput("plotAttendEnroll",
                                                     height="600px")
                                          ),

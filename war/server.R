@@ -22,7 +22,6 @@ impact<-cbind(ps.all, round(impact[2],1))
 impact$Difference<-impact$Impact - impact$PowerSchool
 
 
-
 #### Shiny Server output code ####
 shinyServer(function(input, output) {
   #Impact and PowerSchool Comparison
@@ -34,11 +33,16 @@ shinyServer(function(input, output) {
                                 )
   # Daily Enrollment & Attendance Plot ####
   lastXweeks<-ymd(as.character(floor_date(today() -weeks(6), 
-                                          unit="week")+1
+                                          unit="week"
+                                          )+1
                                )
                   )
-  
-  DailyEnrollAttend.plotdata<-subset(DailyEnrollAttend, Date>=lastXweeks)
+  output$last6weeks <- renderText(as.character(lastXweeks))
+  output$thisweek <- renderText(as.character(floor_date(today(),unit="week")+1))
+  output$firstweek <- renderText(as.character(floor_date(DailyEnrollAttend[,min(WeekOfDate)])))
+                                   
+                                   
+  DailyEnrollAttend.plotdata<-DailyEnrollAttend
   DailyEnrollAttend.plotdata$Day <- wday(DailyEnrollAttend.plotdata$Date)
   DailyEnrollAttend.plotdata$Enrolled96Pct <- DailyEnrollAttend.plotdata$Enrolled*.96
   DailyEnrollAttend.plotdata.melt<-melt(DailyEnrollAttend.plotdata, 
@@ -51,9 +55,18 @@ shinyServer(function(input, output) {
                                                             "Attended")
                                                    )
   
-  DAE.dt<-as.data.table(DailyEnrollAttend.plotdata.melt)
+ 
+  
+  getDAE <- reactive({
+   dt<-as.data.table(DailyEnrollAttend.plotdata.melt)
+   dt[Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2])]
+  }
+    )
   
   # can't plot a line with only one point (so need)
+  
+  ggAttend <- function(){
+    DAE.dt <- getDAE()
   if(DAE.dt[max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel), 
             length(unique(Date))]==1){
     p <- ggplot(DAE.dt[Date<max(Date),], aes(x=Day, y=value))
@@ -80,7 +93,9 @@ shinyServer(function(input, output) {
           axis.title.y=element_text(size=10),
           legend.text=element_text(size=12)
     )
-  output$plotAttendEnroll <- renderPlot(print(p))
+  print(p)
+  }
+  output$plotAttendEnroll <- renderPlot(ggAttend())
   
   # Daily Attend Table ####
   DailyEnrollAttend.dt <- copy(DailyEnrollAttend[,list(
