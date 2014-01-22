@@ -1,0 +1,10 @@
+# Ignore CSV files
+*.csv
+
+#ignore DCF files 
+*.dcf
+
+# Ignore log directories or files
+log/
+*.log
+
