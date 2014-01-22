@@ -10,7 +10,7 @@ impact <- read.csv(textConnection(googurl))
 # PowerSchool/Impact Summary Table ####
 message('Create PowerSchool/Impact summary table(s)')
 message('Summarizing PowerSchool data')
-ps.schools<- Attendance[,list(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)), by=list(School)]
+ps.schools<- Attendance[,list(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)), by=list(School)][order(School)]
 ps.pm<-Attendance[School=="KAMS"|School=="KAP",list(School="KAP/KAMS",PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1))]
 ps.region<-Attendance[,list(School="Region",PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1))]
 

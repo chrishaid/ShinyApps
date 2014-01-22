@@ -61,6 +61,7 @@ shinyServer(function(input, output, session) {
   
   log("Server init.")
   
+  
   output$schools<-renderUI({
     schls<-map.data[,unique(SchoolInitials)]
     
@@ -75,6 +76,9 @@ shinyServer(function(input, output, session) {
                                     unique(Subject)]
                            return(dt)}
                           )
+  
+
+  
   output$subjects <- renderUI({
     selectInput("subject",
                 "Select Subject",
