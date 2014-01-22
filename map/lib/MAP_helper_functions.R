@@ -1,7 +1,98 @@
 # MAP Analsyis Helper Functions, based on MAP Analysis Helper Function of Fall
-# 2012
-# Spring 2013, Christopher J Haid and KIPP Chicago
+# 2013
+# Spring 2014, Christopher J Haid and KIPP Chicago
 
+calc_quartile <- function(dtable, percentile.column = "TestPercentile", quartile.col.name=NULL){
+  # This function takes a data.table, inspects its percentile colum and 
+  # determins the recods's quartiel. A new data.table with an extra column 
+  # containing the calculate quartile is returned
+  #
+  # Args:
+  #   dtable:             a data.table with a column of pernctiles (as integers)
+  #   percentile.column:  the name of the column in the data table as character
+  #   quartile.col.name:  the name of the new quartile column
+  #
+  # Returns:
+  #   dt: a datatable equivilent to the dtable argurment with an additional 
+  #       column containing quartiles as integers (1:4) and named by 
+  #       quartile.col.name argument
+  
+  if(is.null(quartile.col.name)) quartile.col.name<-"Quartile"
+  
+  if(!is.data.table(dtable)) dt<-as.data.table(dtable)
+    else dt<-copy(dtable)
+  pcn<-substitute(percentile.column)
+  qcn<-substitute(quartile.col.name)
+  
+  dt[,c(qcn):=as.integer(NA)]
+  
+  dt[get(pcn)<25, 
+     c(qcn):=1L]
+  
+  dt[get(pcn)>=25 & 
+       get(pcn)<50, 
+     c(qcn):=2L]
+  
+  dt[get(pcn)>=50 & 
+       get(pcn)<75, 
+     c(qcn):=3L]
+  
+  dt[get(pcn)>=75, 
+     c(qcn):=4L]
+  
+
+    dt[,c(qcn):=as.factor(get(qcn))]
+
+    
+  dt
+}
+
+calc_tiered_growth<- function(dt, quartile.column, grade.column){
+  # Function takes a data table and along with the names of the quartile indicator
+  # and grade indicator columns and returns a data.table with the 1 extra column
+  # providing the KIPP Foundations Tiered Growth guidelines. 
+  #
+  # Args:
+  #   dt: a data.table with a quartile column and grade column
+  #   quartile.column:  character vector of name of column containing student
+  #                     quartiles
+  #   grade.colum:      character vector of name of colum contain student
+  #                     grade level
+  #
+  # Returns:
+  #   dt: a data.table identical to the dt arguments data.table with the
+  #       addition of a column containing the quartile column named
+  #       KIPPTieredGrowth
+  
+  
+  
+  # Create data.table lookup of KIPP Foundation Growth Targts
+  # using quartile.column name 
+  tgrowth<-data.table(GradeType=c(rep(0,4),rep(1,4)), 
+                      Quartile = as.factor(rep(1:4, 2)), 
+                      KIPPTieredGrowth=c(1.5,1.5,1.25,1.25,2,1.75,1.5,1.25)
+  )
+  setkey(tgrowth, GradeType, Quartile)
+  setnames(tgrowth, "Quartile", quartile.column)
+  
+  dt<-copy(dt)
+  
+  # Create Grade Type column
+  dt[get(grade.column)<=3, GradeType:=0]
+  dt[get(grade.column)>3, GradeType:=1]
+  
+  setkeyv(dt, c("GradeType", quartile.column))
+  
+  #merge data frames
+  dt<-copy(tgrowth[dt])
+  
+  # Cleaning up 
+  dt[,GradeType:=NULL]
+  
+  # TO DO: Reorder columns back to original data.table's ordering. 
+  
+  dt
+}
 
 orderid<-function(df,v1){
   # This function takes a dataframe df and a column name v1 used to sort the 
@@ -26,7 +117,7 @@ orderid<-function(df,v1){
 
 
 #Function to get count, pct of total, average x and avearge y 
-get_group_stats<-function(df, grp="Quartile",RIT="Fall12_RIT"){
+get_group_stats<-function(df, grp="Quartile",RIT="Fall13_RIT"){
     require(plyr)
     dftotal<-nrow(df)
     ddply(df, 
@@ -42,115 +133,256 @@ get_group_stats<-function(df, grp="Quartile",RIT="Fall12_RIT"){
 
 
 #Function to report MAP RIT scores and goals (expected adn expected at 7th percentile) with summary stats
-plot_MAP_Results_and_Goals <- function (df, plottitle=" ",labxpos=115, minx=105,alp=1) {
+#Function to report MAP RIT scores and goals (expected adn expected at 7th percentile) with summary stats
+plot_waterfall <- function (df, 
+                            plottitle=" ", 
+                            season1="Fall13", 
+                            season2=NULL, 
+                            tiered.growth="KIPPTieredGrowth", 
+                            labxpos=115, 
+                            minx=105,
+                            alp=1) {
   
-  require(grid)
-  require(ggplot2)
+  # Test if this is a two season (with arrows) or one season (with dots)
+  season1.only <-is.null(season2)
   
+  #assinge kipp colors for quartiles
   kippcols<-c("#E27425", "#FEBC11", "#255694", "A7CFEE")
   
+  
+  #get names for all season specific variables to be used in 
+  season1.rit<-sprintf("%s_RIT", season1)
+  season1.ritpctl<-sprintf("%s_RITPctl", season1)
+  season1.quartile<-sprintf("%s_Quartile", season1)
+  season1.grade<-sprintf("%s_Grade", season1)
+  season1.class<-sprintf("%s_Classname", season1)
+  
+  if(!season1.only){
+    season2.rit<-sprintf("%s_RIT", season2)
+    season2.ritpctl<-sprintf("%s_RITPctl", season2)
+    season2.quartile<-sprintf("%s_Quartile", season2)
+    season2.grade<-sprintf("%s_Grade", season2)
+    season2.class<-sprintf("%s_Classname", season2)
+    typical.growth<-sprintf("Reported%sTo%sGrowth",
+                            str_extract(season1, "[[:alpha:]]+"),
+                            str_extract(season2, "[[:alpha:]]+")
+    )
+  } else typical.growth<-"ReportedFallToSpringGrowth"
+  
+  #college ready target = typical growth *  tiered growth multiplier 
+  cr.growth<-paste0(typical.growth, "*", tiered.growth)
+  
+  df<-copy(df)
+  
+  #change name of RIT Score column if it is equal to TestRITScore
+  if(!exists(season1.rit, df)) setnames(df, "TestRITScore", season1.rit)
+  
+  
+  
+  #check for orderid and add if not existent
+  if(!exists("OrderID", df)){
+    df[,OrderID:=rank(get(season1.rit), ties.method="random"), by=list(SchoolInitials, 
+                                                 get(season1.grade),
+                                                 Subject)]
+  }
+  
+  if(!season1.only){
+    #Growth Category Calcs
+    if(!exists("GrowthCat", df)){
+      df[get(season2.rit)-get(season1.rit)
+         >0,
+         GrowthCat:="Positive"]
+    
+      df[get(season2.rit)-get(season1.rit)
+         <=0,
+         GrowthCat:="Negative"]
+    
+      df[get(season2.rit)-get(season1.rit)
+         >=get(typical.growth),
+         GrowthCat:="Typical"]
+    
+      df[get(season2.rit)-get(season1.rit)
+         >=get(typical.growth)
+        *get(tiered.growth),
+        GrowthCat:="College Ready"]
+    
+    }
+  
+  
+  df[GrowthCat=="Positive", StudentFirstLastNameRIT:=paste("O",StudentFirstLastNameRIT)]
+  }
+  
+  
+  
   #Plot points for Fall RIT Score, Expected Growth, College Ready Growth, ordered by Fall RIT, Names on Y axis
-  pointsize<-2
-  p <- ggplot(df, aes(x=Fall12_RIT, y=OrderID)) 
+  pointsize<-2.5
+  textsize<-3
+  segsize<-1
+  negadjust<-1
+  p <- ggplot(df, aes_string(x=season1.rit, y="OrderID")) 
+  
   
   # Need to check for each growth categories existence, otherise you can throuhg
-  # a pretty annoying error (which was happily discorbed when two grade-subject
+  # a pretty annoying error (which was happily discovered when two grade-subject
   # pairs had no negative growth in 2012-13)
   
-  # Get extant growth categories
-  growth.cat<-unique(df[,GrowthCat])
-  
-  if("College Ready" %in% growth.cat){
-    p <- p + geom_segment(data=df[GrowthCat=="College Ready"], 
-                          aes(x=Fall12_RIT,
-                              xend=Spring13_RIT, 
-                              y=OrderID, 
-                              yend=OrderID), 
-                          arrow = arrow(length = unit(0.1,"cm")), 
-                          color="#FEBC11") 
-  }
-  
-  if("Typical" %in% growth.cat){
-    p <- p + geom_segment(data=df[GrowthCat=="Typical"], 
-                          aes(x=Fall12_RIT, 
-                              xend=Spring13_RIT, 
-                              y=OrderID, 
-                              yend=OrderID), 
-                          arrow = arrow(length = unit(0.1,"cm")), 
-                          color="#CFCCC1") 
-  }
-  
-  if("Positive" %in% growth.cat){
-    p <- p + geom_segment(data=df[GrowthCat=="Positive"], 
-                          aes(x=Fall12_RIT, 
-                              xend=Spring13_RIT, 
-                              y=OrderID, yend=OrderID), 
-                          arrow = arrow(length = unit(0.1,"cm")), 
-                          color="#C49A6C") 
-  }
-  
-  
-  if("Negative" %in% growth.cat){
-    p <- p + geom_segment(data=df[GrowthCat=="Negative"], 
-                          aes(x=Fall12_RIT, 
-                              xend=Spring13_RIT, 
-                              y=OrderID, 
-                              yend=OrderID),  
-                          arrow = arrow(length = unit(0.1,"cm")), 
-                          color="red") 
+  # Get extant growth categories (only if season1.only=FALSE)
+  if(!season1.only){
+    growth.cat<-unique(df[,GrowthCat])
     
-    p <- p + geom_text(data=df[GrowthCat=="Negative"],
-                       aes(x=Spring13_RIT-.5, 
-                           color=as.factor(Spring13_Quartile), 
-                           label=Spring13_RIT), 
-                       size=2, 
-                       hjust=1) 
-    p <- p + geom_text(data=df[GrowthCat=="Negative"],
-                       aes(x=Fall12_RIT+1, 
-                           color=as.factor(Fall12_Quartile), 
-                           label=Fall12_RIT), 
-                       size=2, 
-                       hjust=0) 
+    if("College Ready" %in% growth.cat){
+      p <- p + geom_segment(data=df[GrowthCat=="College Ready"], 
+                            aes_string(x=season1.rit,
+                                       xend=season2.rit, 
+                                       y="OrderID", 
+                                       yend="OrderID"), 
+                            arrow = arrow(length = unit(0.1,"cm")), 
+                            size=segsize,
+                            color="#FEBC11") 
+    }
     
-    p <- p + geom_text(data=df[GrowthCat=="Negative"],
-                       aes(x=Spring13_RIT-4, 
-                           label=StudentFirstLastName), 
-                       color="red" ,
-                       size=2, 
+    if("Typical" %in% growth.cat){
+      p <- p + geom_segment(data=df[GrowthCat=="Typical"], 
+                            aes_string(x=season1.rit, 
+                                       xend=season2.rit, 
+                                       y="OrderID", 
+                                       yend="OrderID"), 
+                            arrow = arrow(length = unit(0.1,"cm")), 
+                            size=segsize,
+                            color="#CFCCC1") 
+    }
+    
+    if("Positive" %in% growth.cat){
+      p <- p + geom_segment(data=df[GrowthCat=="Positive"], 
+                            aes_string(x=season1.rit, 
+                                       xend=season2.rit, 
+                                       y="OrderID", 
+                                       yend="OrderID"), 
+                            arrow = arrow(length = unit(0.1,"cm")), 
+                            size=segsize,
+                            color="#C49A6C") 
+    }
+    
+    if("Negative" %in% growth.cat){
+      #for names if season1 only. 
+      name.x <- paste0(season2.rit, "-10")
+      df[GrowthCat=="Negative",  StudentFirstLastName:=paste("X",  StudentFirstLastName)]
+      
+      p <- p + geom_segment(data=df[GrowthCat=="Negative"], 
+                            aes_string(x=season1.rit, 
+                                       xend=season2.rit, 
+                                       y="OrderID", 
+                                       yend="OrderID"),  
+                            arrow = arrow(length = unit(0.1,"cm")), 
+                            size=segsize,
+                            color="red") 
+      
+      p <- p + geom_text(data=df[GrowthCat=="Negative"],
+                         aes_string(x=paste0(season2.rit,"-1"), 
+                                    color=paste0("as.factor(",season2.quartile,")"), 
+                                    label=season2.ritpctl), 
+                         size=textsize, 
+                         hjust=1) 
+      
+      p <- p + geom_text(data=df[GrowthCat=="Negative"],
+                         aes_string(x=paste0(season1.rit,"+1"), 
+                                    color=paste0("as.factor(",season1.quartile,")"), 
+                                    label=season1.ritpctl), 
+                         size=textsize, 
+                         hjust=0) 
+      
+      p <- p + geom_text(data=df[GrowthCat=="Negative"],
+                         aes_string(x=name.x, 
+                                    label="StudentFirstLastName"), 
+                         color="red" ,
+                         size=textsize, 
+                         hjust=1) 
+    }
+    
+    p <- p +  geom_text(data=df[GrowthCat!="Negative"],
+                        aes_string(x=paste0(season2.rit,"+.5"), 
+                                   color=paste0("as.factor(",season2.quartile,")"), 
+                                   label=season2.ritpctl), 
+                        size=textsize, 
+                        hjust=0) 
+    
+    
+    
+    p <- p + geom_text(data=df[GrowthCat!="Negative"],
+                       aes_string(x=paste0(season1.rit,"-1"), 
+                                  color=paste0("as.factor(",season1.quartile,")"), 
+                                  label="StudentFirstLastNameRIT"), 
+                       size=textsize, 
                        hjust=1) 
+    
+    p <- p + geom_text(data=df[GrowthCat=="Positive"],
+                       aes_string(x=paste0(season1.rit,"-1"),  
+                                  label="StudentFirstLastNameRIT"), 
+                       size=textsize, 
+                       hjust=1,
+                       color="#C49A6C") 
+    
+  }
+  else {
+    #for names if season1 only. 
+    name.x <- paste0(season1.rit, "-1")
+    name.label <- sprintf(
+      'paste0(StudentFirstName, " ", StudentLastName, " ", %s)',
+      season1.ritpctl)
+    
+    p <- p + geom_text(aes_string(x=name.x,  
+                                  label=name.label,
+                                  color=paste0("as.factor(",season1.quartile,")")), 
+                       size=textsize, 
+                       hjust=1
+    ) 
+    
+    
   }
   
-  p <- p +  geom_text(data=df[GrowthCat!="Negative"],
-                      aes(x=Spring13_RIT+.5, 
-                          color=as.factor(Spring13_Quartile), 
-                          label=Spring13_RIT), 
-                      size=2, 
-                      hjust=0) 
+  #labels and other string tricks
+  tg.target<-paste0(season1.rit, "+", typical.growth)
+  cr.target<-paste0(season1.rit, "+", cr.growth)
   
+  tg.label <- paste0("round(",tg.target,")")
+  cr.label <- paste0("round(",cr.target,")")
   
+  facet.formula<-as.formula(paste0(season1.quartile,"~."))
+  # Season 1 Point   
   
-  p <- p + geom_text(data=df[GrowthCat!="Negative"],
-                     aes(x=Fall12_RIT-1, 
-                         color=as.factor(Fall12_Quartile), 
-                         label=StudentFirstLastNameRIT), 
-                     size=2, 
-                     hjust=1) 
-  
-  p <- p + geom_text(data=df[GrowthCat=="Positive"],
-                     aes(x=Fall12_RIT-1,  
-                         label=StudentFirstLastNameRIT), 
-                     size=2, 
-                     hjust=1,
-                     color="#C49A6C") 
-  
-  
-  
-  p <- p +   geom_point(aes(color=as.factor(Fall12_Quartile)), size=pointsize) +
-    geom_point(aes(x=ProjectedGrowth, y=OrderID), color="#CFCCC1", size=pointsize-.5, alpha=alp, shape="|") +
-    geom_text(aes(x=ProjectedGrowth, label=round(ProjectedGrowth)), color="#CFCCC1", size=1, hjust=0.5, vjust=-1, alpha=alp) +
-    geom_point(aes(x=CollegeReadyGrowth, y=OrderID), color="#FEBC11", size=pointsize-.5, alpha=alp, shape="|") + 
-    geom_text(aes(x=CollegeReadyGrowth, label=CollegeReadyGrowth), color="#FEBC11", size=1, hjust=0.5, vjust=-1, alpha=alp) +
-    facet_grid(Fall12_Quartile~., scale="free_y", space = "free_y", as.table=FALSE) +
+  p <- p + geom_point(aes_string(color=paste0("as.factor(",season1.quartile,")")), 
+                      size=pointsize)
+  # Typical Growth
+  if(season1.only) dot=19 else dot="|" 
+  p<- p + geom_point(aes_string(x=tg.target, 
+                                y="OrderID"), 
+                     color="#CFCCC1", 
+                     size=pointsize-.5, 
+                     alpha=alp, 
+                     shape=dot) +
+    geom_text(aes_string(x=tg.target, label=tg.label),
+              color="#CFCCC1",
+              size=pointsize-.5, 
+              hjust=1, 
+              vjust=-1, 
+              alpha=alp) +
+    geom_point(aes_string(x=cr.target, 
+                          y="OrderID"), 
+               color="#FEBC11", 
+               size=pointsize-.5, 
+               alpha=alp, 
+               shape=dot) + 
+    geom_text(aes_string(x=cr.target, 
+                         label=cr.label), 
+              color="#FEBC11", 
+              size=pointsize-.5, 
+              hjust=0, 
+              vjust=-1, 
+              alpha=alp) +
+    facet_grid(facet.formula, 
+               scale="free_y", 
+               space = "free_y", 
+               as.table=FALSE) +
     scale_colour_discrete(kippcols) + 
     scale_y_continuous(" ", breaks=df$OrderID, expand=c(0,1.5)) + 
     theme(axis.text.y = element_text(size=3, hjust=1)) + 
@@ -180,35 +412,82 @@ plot_MAP_Results_and_Goals <- function (df, plottitle=" ",labxpos=115, minx=105,
   #First get the per panel data I want count by quartile, avg y-position (given by OrderID) by quartile,
   #  avg RIT by quartile, and percent of quartile students to total studens.
   
-  qrtl.labels<-as.data.table(get_group_stats(as.data.frame(df), 
-                                             grp="Fall12_Quartile"))
-  wqrtl.labels<-as.data.table(get_group_stats(as.data.frame(df), 
-                                             grp="Spring13_Quartile"))
+  s1qrtl.labels<-as.data.table(get_group_stats(as.data.frame(df), 
+                                               grp=season1.quartile,
+                                               RIT=season1.rit))
   #add a column with the actual label text
-  qrtl.labels[,CountLabel:=paste(qrtl.labels$CountStudents," students (",round(qrtl.labels$PctofTotal*100),"%)", sep="")]
-  wqrtl.labels[,CountLabel:=paste(wqrtl.labels$CountStudents," students (",round(wqrtl.labels$PctofTotal*100),"%)", sep="")]
   
-  qrtl.labels[,AvgLabel:=paste("F Avg RIT = ",round(qrtl.labels[,AvgQrtlRIT]))]
-  wqrtl.labels[,AvgLabel:=paste("S Avg RIT = ",round(wqrtl.labels[,AvgQrtlRIT]))]
+  s1qrtl.labels[,CountLabel:=paste(s1qrtl.labels$CountStudents,
+                                   " students (",
+                                   round(s1qrtl.labels$PctofTotal*100),"%)", 
+                                   sep="")]
   
-  # realigning to the proper facet
-  setnames(wqrtl.labels, old=1, new="Fall12_Quartile")
+  s1qrtl.labels[,AvgLabel:=paste(sprintf("%s Avg RIT", 
+                                         str_extract(season1, 
+                                                     "[[:alpha:]]")),
+                                 round(s1qrtl.labels[,AvgQrtlRIT]))]
+  #eyeballed X position
+  s1qrtl.labels[,xpos:=rep(labxpos,nrow(s1qrtl.labels))]
   
-  wqrtl.labels[Fall12_Quartile %in% unique(qrtl.labels[,Fall12_Quartile]),AvgCountID:=qrtl.labels[,AvgCountID]-5]
+  # lbaels as above for season 2   
+  if(!season1.only){   
+    s2qrtl.labels<-as.data.table(get_group_stats(as.data.frame(df), 
+                                                 grp=season2.quartile,
+                                                 RIT=season2.rit))
+    s2qrtl.labels[,CountLabel:=paste(s2qrtl.labels$CountStudents,
+                                     " students (",
+                                     round(s2qrtl.labels$PctofTotal*100),"%)", 
+                                     sep="")]
+    
+    
+    
+    s2qrtl.labels[,AvgLabel:=paste(sprintf("%s Avg RIT", 
+                                           str_extract(season2, 
+                                                       "[[:alpha:]]")),
+                                   round(s2qrtl.labels[,AvgQrtlRIT]))]
+    
+    # realigning to the proper facet
+    setnames(s2qrtl.labels, old=1, new=season1.quartile)
+    
+    s2qrtl.labels[season1.quartile %in% unique(
+      s1qrtl.labels[,season1.quartile]),
+                  AvgCountID:=s1qrtl.labels[,AvgCountID]-5]
+    
+    s2qrtl.labels[,xpos:=rep(labxpos,nrow(s2qrtl.labels))]
+    
+  }
   
-#eyeballed X position
-  qrtl.labels[,xpos:=rep(labxpos,nrow(qrtl.labels))]
-  wqrtl.labels[,xpos:=rep(labxpos,nrow(wqrtl.labels))]
   
   #now adding this info to the plot p
-  p <- p + geom_text(data=qrtl.labels, aes(x=xpos, y=AvgCountID, color=factor(Fall12_Quartile),label=CountLabel),vjust=0, size=3.25) +
-    geom_text(data=qrtl.labels, aes(x=xpos, y=AvgCountID, color=factor(Fall12_Quartile),label=AvgLabel),vjust=1.5, size=3.25) 
-  
-  p <- p + geom_text(data=wqrtl.labels, aes(x=xpos, y=AvgCountID, color=factor(Fall12_Quartile),label=CountLabel),vjust=0, size=3.25) +
-    geom_text(data=wqrtl.labels, aes(x=xpos, y=AvgCountID, color=factor(Fall12_Quartile),label=AvgLabel),vjust=1.5, size=3.25) 
-  
-  
-  
+  p <- p + geom_text(data=s1qrtl.labels, 
+                     aes_string(x="xpos", 
+                                y="AvgCountID", 
+                                color=paste0("as.factor(",season1.quartile,")"),
+                                label="CountLabel"),
+                     vjust=0, 
+                     size=textsize) +
+    geom_text(data=s1qrtl.labels, 
+              aes_string(x="xpos", y="AvgCountID", 
+                         color=paste0("as.factor(",season1.quartile,")"),
+                         label="AvgLabel"),
+              vjust=1.5, 
+              size=textsize) 
+  if(!season1.only){  
+    p <- p + geom_text(data=s2qrtl.labels, 
+                       aes_string(x="xpos", 
+                                  y="AvgCountID", 
+                                  color=paste0("as.factor(",season1.quartile,")"),
+                                  label="CountLabel"),
+                       vjust=0, 
+                       size=textsize) +
+      geom_text(data=s2qrtl.labels, 
+                aes_string(x="xpos", 
+                           y="AvgCountID", 
+                           color=paste0("as.factor(",season1.quartile,")"),
+                           label="AvgLabel"),
+                vjust=1.5, 
+                size=textsize) 
+  }
   p
 }
 
@@ -249,7 +528,7 @@ map_combined_histo_data <- function (kippdata=map.scores.KAMS, normsdata=nwea.no
   
   df<-subset(kippdata, Subject==subj & Grade==grade)
   df<-arrange(df, SchoolName) #make sure that all students are sperated by school after subsetting
-  RIT<-df[,"Fall12_RIT"]
+  RIT<-df[,"season1.rit"]
   l<-length(schoolname)
   if(l>1){
     kippnames<-unique(kippdata$SchoolName)
@@ -323,4 +602,105 @@ map_comparative_histograms <- function (df, legendpos="bottom", title=" ",...) {
     ggtitle(title)
   p
 }
+
+pdf_waterfall <- function(.data, school, .by="grade", season1, season2=NULL, alpha=1){
+  
+  # check that .data is a data.table
+  #ERROR HANDLING
+  if(!is.data.table(.data)){
+    dt_name<-as.character(substitute(.data))
+    dt_type<-class(.data)[1]
+    warning(paste(dt_name, 
+                  "is not a data.table.  Trying to coerce", 
+                  dt_name, 
+                  "from", 
+                  dt_type, 
+                  "to data.table."
+    ))
+    .data<-tryCatch({
+      m.dt<-as.data.table(.data)
+      m.dt
+    },
+                     warning = function(w) message(w),
+                     error = function(w) message(paste("An error was generated:\n", w)),
+                     finally = {
+                       stopifnot(is(m.dt, "data.table"))
+                       message(paste("Coercion of" , map.dt_name,"to data.table successful!"))
+                     }
+    )
+  }
+  
+  season1.only <- is.null(season2)
+  
+  dtable <- copy(.data)
+  # Check if SchoolInitials exists; if not, create column 
+  if(!exists("SchoolInitials", dtable)){
+    if(exists("SchoolName", dtable)){
+      dtable[,SchoolInitials:=gsub("(^|\\s)([A-Z])([A-Za-z]+)", "\\2", SchoolName)]
+    } else stop("Need either a SchoolInitials column or a SchoolName column.")
+  }
+  dtable<-dtable[SchoolInitials==school]
+  
+  todays.date<-format(Sys.time(), "%y%m%d")
+  
+  if(.by=="class") {
+    group<-sprintf("%s_Classname", season2)
+  } else group<-sprintf("%s_Grade", season1)
+    
+  
+  
+  s1.rit<-paste(season1, "RIT", sep="_")
+  s1.min <- dtable[,min(get(s1.rit))]
+  if(season1.only){
+    x.lim <- min(s1.min) -10   
+  } 
+  else {
+    s2.rit<-paste(season2, "RIT", sep="_")
+    s2.min<- dtable[,min(get(s2.rit))]
+    x.lim <- min(s1.min, s2.min - 10)
+  }
+  
+  
+  
+  
+  
+  
+  
+  pdf(file=paste0("graphs/",season1,season2,"_MAP_",school,"_by_",.by, "_",todays.date,".pdf"), 
+      height=10.5, 
+      width=8)
+  
+  for(s in sort(dtable[, unique(Subject)])){
+      dfp<-dtable[Subject==s] #Datatable to Plot
+      for(g in as.character(sort(unique(dfp[,get(group)])))){
+        ptitle <- paste0("Fall 2013 - Winter 2013 MAP RIT Scores (Percentiles)\n", 
+                         school," ", g," ", s, 
+                         "\nby Fall Quartile")
+        
+        
+        
+        p<-plot_waterfall(dfp[get(group)==g,], 
+                          ptitle, 
+                          season1=season1,
+                          season2=season2,
+                          tiered.growth="KIPPTieredGrowth",
+                          labxpos=x.lim-5, 
+                          minx=x.lim-10,
+                          alp=alpha)
+        message(paste("Printing School:", school, "\nClass: ", g, "\nSubject: ", s))
+        tryCatch(print(p), 
+                 warning = function(w){warning(w)},
+                 error = function(e){
+                   noprint.text<-paste("Not enough students tested to create waterfall for:", 
+                                       school, g, s )
+                   grid.text(noprint.text, x=unit(.5,"npc"), y=unit(.5,"npc"),
+                             gp=gpar(fontsize=15, col="grey"))
+                   warning(noprint.text)
+                 }
+                 )
+      }
+  }
+  dev.off()
+}
+
 

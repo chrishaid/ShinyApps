@@ -1,4 +1,4 @@
-
+system('touch start.txt')
 message('Sourcing daily attendence data')
 source('data/Attendance.R')
 message('Sourcing students enrolled on 3 Oct 2012')

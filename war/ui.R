@@ -3,6 +3,7 @@
 # report) data analysis project
 
 library(shiny)
+library(shinysky)
 
 
 lastXweeks<-ymd(as.character(floor_date(today() -weeks(6), 
@@ -16,58 +17,59 @@ firstweek <- as.character(floor_date(DailyEnrollAttend[,min(WeekOfDate)]))
 
 shinyUI(
   bootstrapPage(
-   # includeCSS("/var/www/css//bootstrap.min.css"),
-    #includeScript("/var/www/js/bootstrap.min.js"),
     div(class="container-fluid",
         h3(paste("as of", title.date)),
-       div(class="alert alert-warning alert-dismissable", 
-           strong("Note well"), 
-           " that this page can take some time to load.  Please be patient.",
-        tag("button", 
-            list("class"="close", 
-                 "data-dismiss"="alert", 
-                 "aria-hidden"="true",
-                 HTML("&times;")
-                )
-           )
-        ),
+        busyIndicator("Counting students! Please be patient.", wait = 1000),
         tabsetPanel(
           tabPanel(title="Attendance",
-                   h4("Powerschool vs. IMPACT* YTD Attendance"),
-                   htmlOutput("impact"),
-                   p(tags$small("*IMPACT data is only updated on the first day of each school week. ",  
-                                "Consequently, the ",
-                                strong("Difference"),
-                                "column will show wider discrepencies as the week progresses"
-                               )
-                    ),
-                   br(),
                    tabsetPanel(
                      tabPanel(title="Daily",
                               h4("Daily Enrollment and Attendance by School"),
                               tabsetPanel(
                                 tabPanel(title="Visualization", 
+                                         div(class="alert alert-info",
+                                             "The light gray lines shows total enrollment. ",
+                                             "The green line demarcates 96% of enrollment ",
+                                             "(i.e., our regional daily attendance goal). ",
+                                             "The black line with dots represents actual attendance, ",
+                                             "where the dot marks the given weekdays attendance. ",
+                                             br(),
+                                             span(class="label label-default", "New"),
+                                             strong("You can now select the date range for the visualization!")
+                                             ),
                                          dateRangeInput("attDates", 
-                                                        "Weeks:",
+                                                        "Select Dates:",
                                                         start=last6weeks,
                                                         end=thisweek,
                                                         min=firstweek,
                                                         max=thisweek
                                                         ),
+                                         div(class="well", busyIndicator("Calculating! Please be patient.", wait = 1000),
                                          plotOutput("plotAttendEnroll",
-                                                    height="600px")
+                                                    height="600px"))
                                          ),
                                 tabPanel(title="Table",
-                                         checkboxGroupInput('schools', 
+                                         selectInput('schools', 
                                                             'Select School:', 
                                                             DailyEnrollAttend[,unique(School)],
-                                                            selected = "KAMS"),
+                                                            selected = "KAMS", 
+                                                            multiple=TRUE),
                                          div(class="table-condensed", 
                                              dataTableOutput("daily_attend")
                                              )
                                          )
                                 )
                               ),
+                     tabPanel(title = "YTD PowerSchool vs IMPACT",
+                              h4("Powerschool vs. IMPACT* YTD Attendance"),
+                              htmlOutput("impact"),
+                              p(tags$small("*IMPACT data is only updated on the first day of each school week. ",  
+                                           "Consequently, the ",
+                                           strong("Difference"),
+                                           "column will show wider discrepencies as the week progresses"
+                              )
+                              )
+                     ),
                      tabPanel(title="Weekly & YTD",
                               h4("YTD and Weekly Average Daily Attendance"),
                               br(),
@@ -87,7 +89,8 @@ shinyUI(
                    div(class="alert alert-info", p("Cumulative transfers of students enrolled on October 1st of each year and transferred prior to September 20th of the next year. Students who enrolled ", strong("after October 1st"), " and transferred during the school year are ", strong("not included"), " in in these tables and figures.")),
                    tabsetPanel(
                      tabPanel(title="Visualization",
-                              plotOutput("plotTransfers")
+                              div(class="well", busyIndicator("Tracking students! Please be patient.", wait = 1000),
+                              plotOutput("plotTransfers"))
                      ),
                      tabPanel(title="Summary Table",
                               dataTableOutput("xfersSummary")
