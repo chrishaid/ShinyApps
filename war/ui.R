@@ -44,9 +44,8 @@ shinyUI(
                                                         min=firstweek,
                                                         max=thisweek
                                                         ),
-                                         div(class="well", busyIndicator("Calculating! Please be patient.", wait = 1000),
                                          plotOutput("plotAttendEnroll",
-                                                    height="600px"))
+                                                    height="600px")
                                          ),
                                 tabPanel(title="Table",
                                          selectInput('schools', 

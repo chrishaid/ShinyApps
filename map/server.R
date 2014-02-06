@@ -26,27 +26,38 @@ source("lib/helpers.R")
 #need to load one-time per session.
 log("Loading dataset...")
 
-map.data <- read.csv("data/map_F13W14.csv")
-map.data <- data.table(map.data)
+load("data/map_FW.Rdata")
+load("data/map_all.Rdata")
 
-# Tabular summary for Winter 14 (should be abstracted and moved to liv)
+
+# Tabular summary for Winter 14 (should be abstracted and moved to lib)
 tabSummaryMAP <- function(.data, school="KAMS"){
   dt<-copy(.data)
   dt.sum<-dt[SchoolInitials %in% school,
-             list("Total Tested"= .N, 
-                  "# >= Typical" = sum(Winter14_RIT>=ProjectedGrowth),  
-                  "% >= Typical" = round(sum(Winter14_RIT>=ProjectedGrowth)/.N,2), 
-                  "# >= College Ready" = sum(Winter14_RIT>=CollegeReadyGrowth),
-                  "% >= College Ready" = round(sum(Winter14_RIT>=CollegeReadyGrowth)/.N,2)), 
-             by=list(SchoolInitials, 
-                     Winter14_Grade, 
+             list("Total Tested F & W"= .N, 
+                  "# >= Typical NWEA" = sum(Winter_RIT>=ProjectedGrowth),  
+                  "% >= Typical NWEA" = round(sum(Winter_RIT>=ProjectedGrowth)/.N,2), 
+                  "# >= Typical Tracker" = sum(Winter_RIT>=Fall_RIT+(TypicalFallToSpringGrowth/2)),  
+                  "% >= Typical Tracker" = round(sum(Winter_RIT>=Fall_RIT+(TypicalFallToSpringGrowth/2))/.N,2), 
+                  "# >= College Ready NWEA" = sum(Winter_RIT>=CollegeReadyGrowth),
+                  "% >= College Ready NWEA" = round(sum(Winter_RIT>=CollegeReadyGrowth)/.N,2),
+                  "# >= College Ready Tracker" = sum(Winter_RIT>=Fall_RIT+(TypicalFallToSpringGrowth*KIPPTieredGrowth/2)),
+                  "% >= College Ready Tracker" = round(sum(Winter_RIT>=Fall_RIT+(TypicalFallToSpringGrowth*KIPPTieredGrowth/2))/.N,2),
+                  "# >= 50th Percentile Fall" = sum(Fall_Pctl>=50),
+                  "% >= 50th Percentile Fall" = round(sum(Fall_Pctl>=50)/.N,2),
+                  "# >= 50th Percentile Winter" = sum(Winter_Pctl>=50),
+                  "% >= 50th Percentile Winter" = round(sum(Winter_Pctl>=50)/.N,2)
+                  ), 
+             by=list(SY, SchoolInitials, 
+                     Winter_Grade, 
                      Subject)]
-  setnames(dt.sum, c("SchoolInitials", "Winter14_Grade"),
+  setnames(dt.sum, c("SchoolInitials", "Winter_Grade"),
            c("School", "Grade"))
   
   dt.sum[order(School, Subject, Grade)]
 }
 
+map.F13W14 <- map.data[SY=="2013-2014"]
 
 shinyServer(function(input, output, session) {
   # Trick SO on delaying rendering:
@@ -63,7 +74,7 @@ shinyServer(function(input, output, session) {
   
   
   output$schools<-renderUI({
-    schls<-map.data[,unique(SchoolInitials)]
+    schls<-map.F13W14[,unique(SchoolInitials)]
     
     selectInput("school", 
                 "Select School", 
@@ -72,7 +83,7 @@ shinyServer(function(input, output, session) {
     }
     )
   
-  getSubjects <- reactive({dt<-map.data[SchoolInitials==input$school, 
+  getSubjects <- reactive({dt<-map.F13W14[SchoolInitials==input$school, 
                                     unique(Subject)]
                            return(dt)}
                           )
@@ -87,9 +98,9 @@ shinyServer(function(input, output, session) {
   }
   )
   
-  getGrades <- reactive({dt<-map.data[SchoolInitials==input$school & 
+  getGrades <- reactive({dt<-map.F13W14[SchoolInitials==input$school & 
                                         Subject==input$subject, 
-                                        unique(Fall13_Grade)]
+                                        unique(Fall_Grade)]
                            return(dt)}
   )
   output$grades <- renderUI({
@@ -103,7 +114,7 @@ shinyServer(function(input, output, session) {
 
   getData <- reactive(function(){
     log("Subsetting dataset...")
-    map.data[Fall13_Grade     == input$grade & 
+    map.F13W14[Fall_Grade     == input$grade & 
                Subject        == input$subject & 
                SchoolInitials == input$school
              ]
@@ -129,8 +140,8 @@ shinyServer(function(input, output, session) {
     #  before the observer recieves all data from the renderUIs for school, grade, subjectx
     p<-try(plot_waterfall(getData(), 
                       ptitle, 
-                      season1="Fall13", 
-                      season2="Winter14",
+                      season1="Fall", 
+                      season2="Winter",
                       labxpos=100, 
                       minx=95,
                       alp=.6
@@ -145,29 +156,102 @@ shinyServer(function(input, output, session) {
   
 output$main_table <- renderDataTable({
    tbData <- map.data
-   tbData[,list(SchoolInitials, Fall13_Grade, StudentLastName, StudentFirstName, Subject, Fall13_RIT, Fall13_Pctl, 
-                ProjectedGrowth, CollegeReadyGrowth, Winter14_RIT, Winter14_Pctl)] 
+   tbData[,list(SY,
+                SchoolInitials, 
+                Fall_Grade, 
+                StudentLastName, 
+                StudentFirstName, 
+                Subject,
+                Fall_RIT, 
+                Fall_Pctl, 
+                ProjectedGrowth, 
+                CollegeReadyGrowth, 
+                Winter_RIT, 
+                Winter_Pctl)] 
    }, 
    options = list(bSortClasses=TRUE)
    )
 
+getSummaryTable <- reactive({
+  tbSchools<-tabSummaryMAP(map.data, map.data[,unique(SchoolInitials)]) 
+  tbSchools[,School:=as.character(School)]
+  tbRegion<-map.data[,
+                     list("Total Tested F & W"= .N, 
+                          "# >= Typical NWEA" = sum(Winter_RIT>=ProjectedGrowth),  
+                          "% >= Typical NWEA" = round(sum(Winter_RIT>=ProjectedGrowth)/.N,2), 
+                          "# >= Typical Tracker" = sum(Winter_RIT>=Fall_RIT+(TypicalFallToSpringGrowth/2)),  
+                          "% >= Typical Tracker" = round(sum(Winter_RIT>=Fall_RIT+(TypicalFallToSpringGrowth/2))/.N,2), 
+                          "# >= College Ready NWEA" = sum(Winter_RIT>=CollegeReadyGrowth),
+                          "% >= College Ready NWEA" = round(sum(Winter_RIT>=CollegeReadyGrowth)/.N,2),
+                          "# >= College Ready Tracker" = sum(Winter_RIT>=Fall_RIT+(TypicalFallToSpringGrowth*KIPPTieredGrowth/2)),
+                          "% >= College Ready Tracker" = round(sum(Winter_RIT>=Fall_RIT+(TypicalFallToSpringGrowth*KIPPTieredGrowth/2))/.N,2),
+                          "# >= 50th Percentile Fall" = sum(Fall_Pctl>=50),
+                          "% >= 50th Percentile Fall" = round(sum(Fall_Pctl>=50)/.N,2),
+                          "# >= 50th Percentile Winter" = sum(Winter_Pctl>=50),
+                          "% >= 50th Percentile Winter" = round(sum(Winter_Pctl>=50)/.N,2)
+                     ), 
+                     by=list(SY, Winter_Grade, 
+                             Subject)]
+  setnames(tbRegion, "Winter_Grade", "Grade")
+  tbRegion[,School:="KIPP Chicago"]
+  
+  tbData<-rbind(tbSchools, tbRegion)
+  
+  tbData[,Grade:=factor(Grade, levels=c("K", 1:8))]
+  
+  tbData[,Subject:=factor(Subject, levels=c("Mathematics",
+                                            "Reading",
+                                            "Language Usage",
+                                            "General Science",
+                                            "Science - Concepts and Process")
+                          )
+         ]
+  
+  tbData[,School:=factor(School, 
+                         levels=c("KIPP Chicago",
+                                  "KAP",
+                                  "KAMS",
+                                  "KCCP",
+                                  "KBCP"
+                                  )
+                         )
+         ]
+  
+  tbData<-tbData[School %in% input$selectSummSchool & 
+                   SY %in% input$selectSummSY &
+                   Subject %in% input$selectSummSubj &
+                   Grade %in% input$selectSummGrades
+                 ][order(SY, Subject, Grade, School)]
+  
+  setnames(tbData, "SY", "School Year")
+  if(nrow(tbData)==0) return()
+  tbData
+  
+})
+
+
+
+
+
 output$sum_table <-renderDataTable({
-  tabSummaryMAP(map.data, map.data[,unique(SchoolInitials)])       
+  getSummaryTable()
   },
   options = list(bSortClasses=TRUE)
 )
 
 output$reg_sum_table <-renderDataTable({
   tbData<-map.data[,
-     list("Total Tested"= .N, 
-          "# >= Typical" = sum(Winter14_RIT>=ProjectedGrowth),  
-          "% >= Typical" = round(sum(Winter14_RIT>=ProjectedGrowth)/.N,2), 
-          "# >= College Ready" = sum(Winter14_RIT>=CollegeReadyGrowth),
-          "% >= College Ready" = round(sum(Winter14_RIT>=CollegeReadyGrowth)/.N,2)), 
-     by=list( Winter14_Grade, 
+     list("Total Tested F & W"= .N, 
+          "# >= Typical" = sum(Winter_RIT>=ProjectedGrowth),  
+          "% >= Typical" = round(sum(Winter_RIT>=ProjectedGrowth)/.N,2), 
+          "# >= College Ready" = sum(Winter_RIT>=CollegeReadyGrowth),
+          "% >= College Ready" = round(sum(Winter_RIT>=CollegeReadyGrowth)/.N,2)), 
+     by=list(SY, Winter_Grade, 
              Subject)]
-  setnames(tbData, "Winter14_Grade", "Grade")
-  tbData[order(Subject, Grade)]
+  setnames(tbData, "Winter_Grade", "Grade")
+  tbData[,School:="KIPP Chicago"]
+  
+  tbData[order(SY, Subject, Grade)]
 })
 
 })

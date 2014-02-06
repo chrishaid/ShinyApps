@@ -3,6 +3,8 @@
 message("Loading packages")
 library(data.table)
 library(RJDBC)
+library(dplyr)
+library(stringr)
 
 message("Loading helper functions")
 
@@ -12,15 +14,37 @@ source('../lib/MAP_helper_functions.R')
 message('Getting Intial MAP Data')
 
 source('map.F13W14.R')
+source('map.F12W13.R')
+source('map.F11W12.R')
+source('map.all.R')
 
 message('Preprocess Data')
 #source('../munge/01-All_Schools.R')
-#source('../munge//02-kaps.R')
+source('../munge/03-map_all.R')
+
+
 
 message('Prep Data')
-FW.dt<-PrepMAP(map.F13W14, season1="Fall13", season2="Winter14")
+map.F13W14<-PrepMAP(map.F13W14, season1="Fall13", season2="Winter14")
+map.F12W13<-PrepMAP(map.F12W13, season1="Fall12", season2="Winter13")
+map.F11W12<-PrepMAP(map.F11W12, season1="Fall11", season2="Winter12")
 
-message('Writing file to csv')
-write.csv(FW.dt, file="map_F13W14.csv")
+map.F13W14[,SY:="2013-2014"]
+map.F12W13[,SY:="2012-2013"]
+map.F11W12[,SY:="2011-2012"]
+
+map.data<-rbind(map.F13W14, map.F12W13, map.F11W12, use.names=FALSE)
+
+setnames(map.data,
+         old=names(map.data),
+         new=gsub("([a-zA-z]+)[0-9]+(_\\w+)",
+                  "\\1\\2", 
+                  names(map.data)
+                  )
+         )
+
+message('Writing files to disk (as .Rdata binaries)')
+save(map.data, file="map_FW.Rdata")
+save(map.all, file="map_all.Rdata")
 
 system('touch ../restart.txt')

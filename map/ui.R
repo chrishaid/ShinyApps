@@ -1,6 +1,13 @@
 library(shiny)
 require(shinysky)
-
+schools <- list("KIPP Chicago", "KAP", "KAMS", "KCCP", "KBCP")
+sys <- list("2013-2014", "2012-2013", "2011-2012")
+subjs <-  list("Mathematics", 
+               "Reading", 
+               "Language Usage", 
+               "General Science", 
+               "Science - Concepts and Process")
+grades <- c("K", 1:8)
 shinyUI(bootstrapPage(
   
   tabsetPanel(
@@ -14,12 +21,48 @@ shinyUI(bootstrapPage(
                busyIndicator("Chasing waterfalls! Please be patient.", wait = 1000),
                plotOutput(outputId = "main_plot", height = "1000px")
              )),
-    tabPanel("KIPPChi Summary Stats",
-             h3("Regional Summary", span(class="label label-default","New")),
-             dataTableOutput("reg_sum_table")
-             ),
     tabPanel("School Summary Stats",
              h3("School-level Summary", span(class="label label-default","New")),
+             div(class="row-fluid ",
+                 div(class="well container-fluid",
+                     div(class="container span3",
+                         select2Input(inputId="selectSummSchool", 
+                                      label="School(s) Selected:",
+                                      choices=schools,
+                                      selected=schools,
+                                      type="select",
+                                      multiple=TRUE
+                                  )
+                         ),
+                     div(class="container span3",
+                         select2Input(inputId="selectSummSY", 
+                                      label="Year(s) Selected:",
+                                      choices=sys,
+                                      selected="2013-2014",
+                                      type="select",
+                                      multiple=TRUE
+                                      )
+                         ),
+                     div(class="container span3",
+                         select2Input(inputId="selectSummSubj", 
+                                      label="Subject(s) Selected:",
+                                      choices=subjs,
+                                      selected=list("Mathematics", "Reading"),
+                                      type="select",
+                                      multiple=TRUE
+                                      )
+                         ),
+                     div(class="container span3",
+                         select2Input(inputId="selectSummGrades", 
+                                      label="Grade(s) Selected:",
+                                      choices=grades,
+                                      selected=grades,
+                                      type="select",
+                                      multiple=TRUE
+                                      )
+                         )
+                     )
+                 ),
              dataTableOutput("sum_table")
              ),
     tabPanel("Student Data",

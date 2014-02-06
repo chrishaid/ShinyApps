@@ -77,7 +77,7 @@ get_MAPResults <- function(connection, season1 = "Fall13", season2=NULL){
 } 
 else {
   
-  qry <- sprintf("CALL GetMAPResultsFromToByName('%s', '%s');",season1, season2)
+  qry <- sprintf("CALL GetMAPResultsFromTo('%s', '%s');",season1, season2)
   tryCatch(df<-dbGetQuery(connection, qry),
            error = function(w) {print(paste("You need to have a JDBC conncetion to the database.  Original error is:", w))}
   )
