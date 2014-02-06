@@ -1,6 +1,7 @@
 # Ignore CSV files
 *.csv
-
+#ignore .Rdata files
+*.Rdata
 #ignore DCF files 
 *.dcf
 
