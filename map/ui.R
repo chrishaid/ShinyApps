@@ -8,6 +8,45 @@ subjs <-  list("Mathematics",
                "General Science", 
                "Science - Concepts and Process")
 grades <- c("K", 1:8)
+
+cols <- c("Total Tested F & W", 
+             "# >= Typical NWEA",  
+             "% >= Typical NWEA", 
+             "# >= Typical Tracker",  
+             "% >= Typical Tracker", 
+             "# >= College Ready NWEA",
+             "% >= College Ready NWEA",
+             "# >= College Ready Tracker",
+             "% >= College Ready Tracker",
+             "# >= 50th Percentile Fall",
+             "% >= 50th Percentile Fall",
+             "# >= 50th Percentile Winter",
+             "% >= 50th Percentile Winter",
+             "# >= 75th Percentile Fall",
+             "% >= 75th Percentile Fall",
+             "# >= 75th Percentile Winter",
+             "% >= 75th Percentile Winter"
+          )
+
+cols.selected <- c("Total Tested F & W", 
+         #"# >= Typical NWEA",  
+          "% >= Typical NWEA", 
+          #"# >= Typical Tracker",  
+          #"% >= Typical Tracker", 
+          #"# >= College Ready NWEA",
+          "% >= College Ready NWEA",
+          #"# >= College Ready Tracker",
+          #"% >= College Ready Tracker",
+          #"# >= 50th Percentile Fall",
+          "% >= 50th Percentile Fall",
+          #"# >= 50th Percentile Winter",
+          "% >= 50th Percentile Winter",
+          #"# >= 75th Percentile Fall",
+          "% >= 75th Percentile Fall",
+          #"# >= 75th Percentile Winter",
+          "% >= 75th Percentile Winter"
+)
+
 shinyUI(bootstrapPage(
   
   tabsetPanel(
@@ -60,7 +99,20 @@ shinyUI(bootstrapPage(
                                       type="select",
                                       multiple=TRUE
                                       )
+                         ),
+                     p(),
+                     div(class="container span3",
+                         p(),p(),
+                         helpText("You can select different columns in this table using Command+clicking (Mac) or Control+clicking (PC):")
+                         ),
+                     div(class="container span3",
+                         selectInput(inputId="selectSummCols", 
+                                      label="Columns Selected:",
+                                      choices=cols,
+                                      selected=cols.selected,
+                                      multiple=TRUE
                          )
+                     )
                      )
                  ),
              dataTableOutput("sum_table")

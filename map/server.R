@@ -46,7 +46,11 @@ tabSummaryMAP <- function(.data, school="KAMS"){
                   "# >= 50th Percentile Fall" = sum(Fall_Pctl>=50),
                   "% >= 50th Percentile Fall" = round(sum(Fall_Pctl>=50)/.N,2),
                   "# >= 50th Percentile Winter" = sum(Winter_Pctl>=50),
-                  "% >= 50th Percentile Winter" = round(sum(Winter_Pctl>=50)/.N,2)
+                  "% >= 50th Percentile Winter" = round(sum(Winter_Pctl>=50)/.N,2),
+                  "# >= 75th Percentile Fall" = sum(Fall_Pctl>=75),
+                  "% >= 75th Percentile Fall" = round(sum(Fall_Pctl>=75)/.N,2),
+                  "# >= 75th Percentile Winter" = sum(Winter_Pctl>=75),
+                  "% >= 75th Percentile Winter" = round(sum(Winter_Pctl>=75)/.N,2)
                   ), 
              by=list(SY, SchoolInitials, 
                      Winter_Grade, 
@@ -188,7 +192,11 @@ getSummaryTable <- reactive({
                           "# >= 50th Percentile Fall" = sum(Fall_Pctl>=50),
                           "% >= 50th Percentile Fall" = round(sum(Fall_Pctl>=50)/.N,2),
                           "# >= 50th Percentile Winter" = sum(Winter_Pctl>=50),
-                          "% >= 50th Percentile Winter" = round(sum(Winter_Pctl>=50)/.N,2)
+                          "% >= 50th Percentile Winter" = round(sum(Winter_Pctl>=50)/.N,2),
+                          "# >= 75th Percentile Fall" = sum(Fall_Pctl>=75),
+                          "% >= 75th Percentile Fall" = round(sum(Fall_Pctl>=75)/.N,2),
+                          "# >= 75th Percentile Winter" = sum(Winter_Pctl>=75),
+                          "% >= 75th Percentile Winter" = round(sum(Winter_Pctl>=75)/.N,2)
                      ), 
                      by=list(SY, Winter_Grade, 
                              Subject)]
@@ -225,7 +233,7 @@ getSummaryTable <- reactive({
   
   setnames(tbData, "SY", "School Year")
   if(nrow(tbData)==0) return()
-  tbData
+  tbData[,c("School Year", "Subject", "School", "Grade", input$selectSummCols), with=F]
   
 })
 

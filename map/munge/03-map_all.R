@@ -22,4 +22,4 @@ map.all<-map.all %.%
          CohortYear=(12-Grade)+as.numeric(Year2)
   ) %.%
   filter(Year1 >= 2007 & GrowthMeasureYN=='TRUE') %.%
-  mutate(SchoolInitials=schoolInitials(SchoolName))
+  mutate(SchoolInitials=schoolInitials(SchoolName), SY=paste(Year1, Year2, sep="-"))
