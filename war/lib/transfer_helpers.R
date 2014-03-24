@@ -14,9 +14,17 @@ cum.na <- function(x) {
 transferplot.data.prep <- function (transfers.data, enrolled.data) {
   # Creates a ready to ploy month cumulative sum of powerschool exit data using the list fo transferd students 
   
-  
+  require(data.table)
   require(lubridate)
   require(reshape2)
+  
+  hsr_enrolled<-enrolled.data[,list(HSR_Enrolled=.N),by=SCHOOLID]
+  hsr_enrolled[SCHOOLID==78102,  School:= "KAP"]
+  hsr_enrolled[SCHOOLID==7810,   School:="KAMS"]
+  hsr_enrolled[SCHOOLID==400146, School:="KCCP"]
+  hsr_enrolled[SCHOOLID==400163, School:="KBCP"]
+  hsr_enrolled[,SCHOOLID:=NULL]
+  setkey(hsr_enrolled, School)
   
   transfers.data$Month<-lubridate::month(ymd_hms(transfers.data$EXITDATE), label=TRUE)
   transfers.data$Week<-lubridate::week(ymd_hms(transfers.data$EXITDATE))
@@ -35,9 +43,9 @@ transferplot.data.prep <- function (transfers.data, enrolled.data) {
   ####Need to build data fram that contains actual YTD, as well as 10% annual ceiling for each school.  Months need to 
   # start with October
   mons<-c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")
-  mons<-factor(mons, levels=mons, ordered=TRUE)
+  #mons<-factor(mons, levels=mons, ordered=TRUE)
 
-  cum.monthly[,Month:=factor(Month, levels=mons)]
+  cum.monthly[,Month:=factor(as.character(Month), levels=mons)]
   
   #School<-c("KAPS", "KAMS", "KCCP")
   Schools<-unique(as.character(cum.monthly$School))
@@ -78,5 +86,18 @@ transferplot.data.prep <- function (transfers.data, enrolled.data) {
   
   xferplot$Value[!is.na(xferplot$Value)]<-xferplot$CumVal[!is.na(xferplot$Value)]
   
-  xferplot
+  xferplot<-data.table(xferplot)
+  
+  setkey(xferplot, School)
+  
+  xferplot2<-xferplot[hsr_enrolled]
+  
+  xferplot2[,Attrition_Rate:=round(CumVal/HSR_Enrolled,3)]
+  
+  xferplot2[,Month:=factor(as.character(Month), levels=mons)]
+  xferplot2[,School:=factor(as.character(School), levels=c("KAP", "KAMS", "KCCP", "KBCP"))]
+  xferplot2[order(School, Variable, Month)]
+  as.data.frame(xferplot2)
+  #x<-as.data.frame(xferplot2)
+  #arrange(x, School, Variable, Month)
 }

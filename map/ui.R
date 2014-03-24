@@ -65,38 +65,38 @@ shinyUI(bootstrapPage(
              div(class="row-fluid ",
                  div(class="well container-fluid",
                      div(class="container span3",
-                         select2Input(inputId="selectSummSchool", 
+                         selectInput(inputId="selectSummSchool", 
                                       label="School(s) Selected:",
                                       choices=schools,
                                       selected=schools,
-                                      type="select",
+                                     # type="select",
                                       multiple=TRUE
                                   )
                          ),
                      div(class="container span3",
-                         select2Input(inputId="selectSummSY", 
+                         selectInput(inputId="selectSummSY", 
                                       label="Year(s) Selected:",
                                       choices=sys,
                                       selected="2013-2014",
-                                      type="select",
+                                      #type="select",
                                       multiple=TRUE
                                       )
                          ),
                      div(class="container span3",
-                         select2Input(inputId="selectSummSubj", 
+                         selectInput(inputId="selectSummSubj", 
                                       label="Subject(s) Selected:",
                                       choices=subjs,
                                       selected=list("Mathematics", "Reading"),
-                                      type="select",
+                                      #type="select",
                                       multiple=TRUE
                                       )
                          ),
                      div(class="container span3",
-                         select2Input(inputId="selectSummGrades", 
+                         selectInput(inputId="selectSummGrades", 
                                       label="Grade(s) Selected:",
                                       choices=grades,
                                       selected=grades,
-                                      type="select",
+                                      #type="select",
                                       multiple=TRUE
                                       )
                          ),

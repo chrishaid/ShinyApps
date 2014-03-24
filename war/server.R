@@ -2,6 +2,10 @@
 # implemented with Shiny Server. 
 
 ####  Sessionwide Data ####
+# Illuminate suspension
+
+load('data/discipline.Rdata')
+
 # CPS Impact ####
 message('Get IMPACT data from google spreadsheet')
 googurl <- getURL(read.dcf('config//ps.dcf', fields='GOOG')[1])
@@ -182,6 +186,12 @@ shinyServer(function(input, output) {
                                           )
   
   ### Suspensions ####
+  
+  output$suspensions<-renderDataTable({disc.dt},
+                                      options = list(bSortClasses = TRUE)
+                                      )
+  
+  # Attendace based
   source('src/suspension_tables.R', local=TRUE)
   
   output$suspWeeklyBySchool <- renderPrint(kable(WeeklySuspensionsBySchool.xtable, 

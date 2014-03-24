@@ -81,7 +81,7 @@ shinyUI(
                               )
                      )
                    ),
-          tabPanel(title="Transfers",
+          tabPanel(title="HSR Transfers",
                    h3("Transfers"),
                    h4("Healthy Schools & Regions transfer totals"),
                    
@@ -99,8 +99,17 @@ shinyUI(
                               )
                    )
           ),
+          tabPanel(title="Suspension Events",
+                   h3("Suspension Events"),
+                   #fluidRow(
+                   #column(4,
+                  #          selectInput('susp_input', 'Options', c("A","B","C"), multiple=TRUE, selectize=TRUE)
+                   #         )
+                   #),
+                   dataTableOutput("suspensions")
+                   ),
           tabPanel(title="Suspension Days",
-                   h3("Suspensions"),
+                   h3("Suspensions Days"),
                    div(class="alert alert-info", p(strong('Note:'),'In this report the metric ', strong('suspensions'),  ' represents days absent due to suspensions and not the number of suspension events. That is, a student recieving a 3-day suspension would appear in this report as having 3 "suspensions" (i.e., three absenses due to being out of school serving a suspension).')),
                    tabsetPanel(
                      tabPanel(title="Weekly",

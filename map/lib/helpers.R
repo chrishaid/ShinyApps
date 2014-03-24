@@ -214,7 +214,7 @@ PrepMAP <- function (map.dt, season1, season2, growth.type="KIPP") {
     
     # Constuct call for for typical growth (= acutal; reported, fwiw, = rounded)
     # and for hte standard deviation of growth
-    tgrowth.var <- paste0("Typical",s1s2,"Growth")
+    tgrowth.var <- paste0("Reported",s1s2,"Growth")
     sd.var <- paste0("SD",s1s2,"Growth")
   
     # Constuct parsed term to evaluate
@@ -240,7 +240,7 @@ PrepMAP <- function (map.dt, season1, season2, growth.type="KIPP") {
                                                     )
                       )
     # set "College Ready" ProjectedGrowth
-    tgrowth.var <- paste0("Typical",s1s2,"Growth")
+    tgrowth.var <- paste0("Reported",s1s2,"Growth")
     map.dt[,CollegeReadyGrowth:=get(RIT1)+(KIPPTieredGrowth*get(tgrowth.var))]
   }
   
