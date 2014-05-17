@@ -17,6 +17,11 @@ firstweek <- as.character(floor_date(DailyEnrollAttend[,min(WeekOfDate)]))
 
 shinyUI(
   bootstrapPage(
+    tags$head( 
+      tags$link(href='static/css/dataTables.tableTools.css', rel="stylesheet", type="text/css"), 
+      tags$script(src='static/js/jquery.dataTables.js'),
+      tags$script(src='static/js/dataTables.tableTools.js')
+    ), 
     div(class="container-fluid",
         h3(paste("as of", title.date)),
         busyIndicator("Counting students! Please be patient.", wait = 1000),

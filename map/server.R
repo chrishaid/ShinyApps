@@ -16,12 +16,17 @@ require(grid)
 require(ggplot2)
 require(stringr)
 require(shinysky)
+require(shinyIncubator)
+library(mapvisuals)
 
 #load MAP Helper functions
 log("Loading MAP graphing functions")
 
 source("lib/MAP_helper_functions.R")
 source("lib/helpers.R")
+
+# creates absoulute path to static resources for IDEA
+addResourcePath('static', '/var/www/')
 
 #need to load one-time per session.
 log("Loading dataset...")
@@ -142,19 +147,37 @@ shinyServer(function(input, output, session) {
    
     # using try() catch an error because renderPlot trys to execute plot_waterfall
     #  before the observer recieves all data from the renderUIs for school, grade, subjectx
+    
+    
+    
+    withProgress(session, min=1, max=15, {
+      
+      
+      setProgress(message = 'Chasing Waterfalls...',
+                  detail = 'This may take a while...')
+      
+      setProgress(value = 10, detail="Subsetting Data")
+    
+    
     p<-try(plot_waterfall(getData(), 
                       ptitle, 
                       season1="Fall", 
                       season2="Winter",
                       labxpos=100, 
                       minx=95,
-                      alp=.6
+                      alp=.6,
+                      text_factor=1.25
                       ),
            silent=TRUE)
-           
-
-    print(p)
     
+    
+      
+      print(p)
+      
+  
+      
+      setProgress(value=15, detail="Drawing the waterfalls!")
+    }) 
   }
 )
   
@@ -173,7 +196,16 @@ output$main_table <- renderDataTable({
                 Winter_RIT, 
                 Winter_Pctl)] 
    }, 
-   options = list(bSortClasses=TRUE)
+   options = list(bSortClasses=TRUE,
+                  aLengthMenu = list(c(5,25, 50, 100, -1), 
+                                     list(5,25,50,100,'All')
+                                     ),
+                  iDisplayLength = 50,
+                  "sDom"='T<"clear">lfrtip',
+                  "oTableTools"=list(
+                    "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                    )
+                  )
    )
 
 getSummaryTable <- reactive({
@@ -244,7 +276,16 @@ getSummaryTable <- reactive({
 output$sum_table <-renderDataTable({
   getSummaryTable()
   },
-  options = list(bSortClasses=TRUE)
+  options = list(bSortClasses=TRUE,
+                 aLengthMenu = list(c(5,25, 50, 100, -1), 
+                                    list(5,25,50,100,'All')
+                                    ),
+                 iDisplayLength = 50,
+                 "sDom"='T<"clear">lfrtip',
+                 "oTableTools"=list(
+                   "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                   )
+                 )
 )
 
 output$reg_sum_table <-renderDataTable({

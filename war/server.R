@@ -1,6 +1,9 @@
 # Test server.R Script for tabbed attendance data usuing the DataTable javascript package 
 # implemented with Shiny Server. 
 
+# creates absoulute path to static resources for IDEA
+addResourcePath('static', '/var/www/')
+
 ####  Sessionwide Data ####
 # Illuminate suspension
 
@@ -114,8 +117,15 @@ shinyServer(function(input, output) {
   output$daily_attend <- renderDataTable({DailyEnrollAttend.dt[School %in% input$schools]
                                           }, 
                                          options = list(bSortClasses = TRUE,
-                                                        aLengthMenu = c(5,25, 50, 200), 
-                                                        iDisplayLength = 5)
+                                                        aLengthMenu = list(c(5,25, 50, 100, -1), 
+                                                                           list(5,25,50,100,'All')
+                                                                           ),
+                                                        iDisplayLength = 50,
+                                                        "sDom"='T<"clear">lfrtip',
+                                                        "oTableTools"=list(
+                                                          "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                                                          )
+                                                        )
                                          )
   
   # Weekly & YTD ADA ####
@@ -140,8 +150,15 @@ shinyServer(function(input, output) {
                                                             with=FALSE]
                                       },
                                      options = list(bSortClasses = TRUE,
-                                                    aLengthMenu = c(10,20, 50), 
-                                                    iDisplayLength = 10)
+                                                    aLengthMenu = list(c(10,20, 50, -1), 
+                                                                       list(10,20,50,'All')
+                                                                       ), 
+                                                    iDisplayLength = 10,
+                                                    "sDom"='T<"clear">lfrtip',
+                                                    "oTableTools"=list(
+                                                      "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                                                      )
+                                                    )
                                      )
   
   
@@ -178,17 +195,41 @@ shinyServer(function(input, output) {
   output$plotTransfers<-renderPlot(print(TransferPlot))
   
   output$xfersSummary <- renderDataTable({Xfer.table},
-                                         options = list(bSortClasses = TRUE)
-  )
+                                         options = list(bSortClasses = TRUE,
+                                                        aLengthMenu = list(c(10,20, 50, -1), 
+                                                                           list(10,20,50,'All')
+                                                        ), 
+                                                        iDisplayLength = 10,
+                                                        "sDom"='T<"clear">lfrtip',
+                                                        "oTableTools"=list("sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                                                                           )
+                                                        )
+                                         )
   
   output$xfersStudents <- renderDataTable({Xfer.students.table},
-                                          options = list(bSortClasses = TRUE)
+                                          options = list(bSortClasses = TRUE,
+                                                         aLengthMenu = list(c(10,20, 50, -1), 
+                                                                            list(10,20,50,'All')
+                                                         ), 
+                                                         iDisplayLength = 10,
+                                                         "sDom"='T<"clear">lfrtip',
+                                                         "oTableTools"=list("sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                                                                            )
+                                                         )
                                           )
   
   ### Suspensions ####
   
   output$suspensions<-renderDataTable({disc.dt},
-                                      options = list(bSortClasses = TRUE)
+                                      options = list(bSortClasses = TRUE,
+                                                     aLengthMenu = list(c(10,20, 50, -1), 
+                                                                        list(10,20,50,'All')
+                                                                        ), 
+                                                     iDisplayLength = 10,
+                                                     "sDom"='T<"clear">lfrtip',
+                                                     "oTableTools"=list("sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                                                                        )
+                                                     )
                                       )
   
   # Attendace based
@@ -201,7 +242,18 @@ shinyServer(function(input, output) {
                                                      row.names=FALSE)
                                                )
   
-  output$suspLeaders <- renderDataTable(Sups.leaders)
+  output$suspLeaders <- renderDataTable({Sups.leaders},
+                                        options = list(bSortClasses = TRUE,
+                                                       aLengthMenu = list(c(10,20, 50, -1), 
+                                                                          list(10,20,50,'All')
+                                                       ), 
+                                                       iDisplayLength = 10,
+                                                       "sDom"='T<"clear">lfrtip',
+                                                       "oTableTools"=list("sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                                                                          )
+                                        )
+  )
+  
   
   output$suspYTDByGrade <- renderPrint(kable(YTDSuspensionsByGradeBySchool.xtable, 
                                                      format='html', 
