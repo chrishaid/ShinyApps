@@ -167,9 +167,9 @@ output$main_table <- renderDataTable({
                 "Growth Season"=GrowthSeason,
                 "School" = SchoolInitials, 
                 Grade, 
-                StudentLastName, 
-                StudentFirstName, 
-                Subject = "MeasurementScale",
+                "Last Name" = StudentLastname, 
+                "First Name" = StudentFirstname, 
+                "Subject" = MeasurementScale,
                 "Seasone 1 RIT" = TestRITScore, 
                 "Season 1 Percentile"=TestPercentile, 
                 "Typical Target"=TypicalTarget,
@@ -285,6 +285,7 @@ output$dashboard_panel <- renderPlot({
             ) + 
     geom_line(aes(group=School, color=School)) +
     geom_point(color="white", size=10) +
+    geom_hline(aes(yintercept=80), color="lightgray") +
     geom_text(aes_string(label=paste0('paste(',y.actual,'*100,"%",sep="")'), 
                          color="School"),
               size=3) +
