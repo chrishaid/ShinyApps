@@ -1,51 +1,49 @@
 library(shiny)
 require(shinysky)
 require(shinyIncubator)
-schools <- list("KIPP Chicago", "KAP", "KAMS", "KCCP", "KBCP")
+schools <- list("Region", "KAP", "KAMS", "KCCP", "KBCP")
 sys <- list("2013-2014", "2012-2013", "2011-2012")
 subjs <-  list("Mathematics", 
                "Reading", 
                "Language Usage", 
-               "General Science", 
-               "Science - Concepts and Process")
+               "General Science"
+               )
 grades <- c("K", 1:8)
 
-cols <- c("Total Tested F & W", 
-             "# >= Typical NWEA",  
-             "% >= Typical NWEA", 
-             "# >= Typical Tracker",  
-             "% >= Typical Tracker", 
-             "# >= College Ready NWEA",
-             "% >= College Ready NWEA",
-             "# >= College Ready Tracker",
-             "% >= College Ready Tracker",
-             "# >= 50th Percentile Fall",
-             "% >= 50th Percentile Fall",
-             "# >= 50th Percentile Winter",
-             "% >= 50th Percentile Winter",
-             "# >= 75th Percentile Fall",
-             "% >= 75th Percentile Fall",
-             "# >= 75th Percentile Winter",
-             "% >= 75th Percentile Winter"
+seasons<-c("Fall - Spring",
+           "Spring - Spring",
+           "Fall - Winter",
+           "Winter - Spring",
+           "Fall - Fall")
+
+cols <- c("N (both seasons)", 
+             "# >= Typical",  
+             "% >= Typical", 
+             "# >= College Ready",
+             "% >= College Ready",
+             "# >= 50th Pctl S1",
+             "% >= 50th Pctl S1",
+             "# >= 50th Pctl S2",
+             "% >= 50th Pctl S2",
+             "# >= 75th Pctl S1",
+             "% >= 75th Pctl S1",
+             "# >= 75th Pctl S2",
+             "% >= 75th Pctl S2"
           )
 
-cols.selected <- c("Total Tested F & W", 
-         #"# >= Typical NWEA",  
-          "% >= Typical NWEA", 
-          #"# >= Typical Tracker",  
-          #"% >= Typical Tracker", 
-          #"# >= College Ready NWEA",
-          "% >= College Ready NWEA",
-          #"# >= College Ready Tracker",
-          #"% >= College Ready Tracker",
-          #"# >= 50th Percentile Fall",
-          "% >= 50th Percentile Fall",
-          #"# >= 50th Percentile Winter",
-          "% >= 50th Percentile Winter",
-          #"# >= 75th Percentile Fall",
-          "% >= 75th Percentile Fall",
-          #"# >= 75th Percentile Winter",
-          "% >= 75th Percentile Winter"
+cols.selected <- c("N (both seasons)", 
+                   #"# >= Typical",  
+                   "% >= Typical", 
+                   #"# >= College Ready",
+                   "% >= College Ready",
+                   #"# >= 50th Pctl S1",
+                   "% >= 50th Pctl S1",
+                   #"# >= 50th Pctl S2",
+                   "% >= 50th Pctl S2",
+                   #"# >= 75th Pctl S1",
+                   "% >= 75th Pctl S1",
+                   #"# >= 75th Pctl S2",
+                   "% >= 75th Pctl S2"
 )
 
 shinyUI(fluidPage(
@@ -55,83 +53,124 @@ shinyUI(fluidPage(
     tags$script(src='static/js/dataTables.tableTools.js')
     ), 
   tabsetPanel(
-    tabPanel("Waterfalls",
-             h3("Waterfall Charts", span(class="label label-default","New")),
+#     tabPanel("Waterfalls",
+#              h3("Waterfall Charts", span(class="label label-default","New")),
+#              fluidRow(
+#                column(4, uiOutput("schools")),
+#                column(4, uiOutput("subjects")),
+#                column(4, uiOutput("grades"))
+#                ),
+#              hr(),
+#              fluidRow(
+#                br(),
+#                column(12, 
+#                 #      busyIndicator("Chasing waterfalls! Please be patient.", wait = 1000),
+#                   progressInit(),
+#                   plotOutput(outputId = "main_plot", height = "1000px")
+#                       )
+#                )
+#              ),
+#     
+    tabPanel("Visualization",
              fluidRow(
-               column(4, uiOutput("schools")),
-               column(4, uiOutput("subjects")),
-               column(4, uiOutput("grades"))
+               column(4,
+                      selectInput(inputId="selectDBSeason",
+                                  label="Growth Season:",
+                                  choices=seasons,
+                                  )
+                      ),
+               column(4,
+                      selectInput(inputId="selectDBSubject",
+                                  label="Subjects",
+                                  choices=subjs,
+                                  selected=c("Reading",
+                                             "Mathematics"),
+                                  multiple=TRUE
+                                  )
+                      ),
+               column(4,
+                      selectInput(inputId="selectDBStat",
+                                  label="Statistic:",
+                                  choices=c("Percent M/E Typical Growth" ="Pct.Typical",
+                                            "Percent M/E College Ready Growth" = "Pct.CR",
+                                            "Percent >= 50th %ile (season 2)"="Pct.50.S2",
+                                            "Percent >= 75th %ile (season 2)"= "Pct.75.S2" 
+                                            ),
+                                  selected="Pct.Typical"
+                                  )
+                      )
                ),
-             hr(),
              fluidRow(
-               br(),
-               column(12, 
-                #      busyIndicator("Chasing waterfalls! Please be patient.", wait = 1000),
-                  progressInit(),
-                  plotOutput(outputId = "main_plot", height = "1000px")
+               column(12,
+                      plotOutput("dashboard_panel")
                       )
                )
-             ),
+      ),
     tabPanel("School Summary Stats",
              h3("School-level Summary", span(class="label label-default","New")),
              fluidRow(
-                     column(3,
-                         selectInput(inputId="selectSummSchool", 
-                                      label="School(s) Selected:",
-                                      choices=schools,
-                                      selected=schools,
-                                     # type="select",
-                                      multiple=TRUE
+               column(4,
+                      selectInput(inputId="selectSummSY", 
+                                  label="Year(s) Selected:",
+                                  choices=sys,
+                                  selected="2013-2014",
+                                  #type="select",
+                                  multiple=TRUE
                                   )
-                         ),
-                     column(3,
-                         selectInput(inputId="selectSummSY", 
-                                      label="Year(s) Selected:",
-                                      choices=sys,
-                                      selected="2013-2014",
-                                      #type="select",
-                                      multiple=TRUE
-                                      )
-                         ),
-                     column(3,
-                         selectInput(inputId="selectSummSubj", 
-                                      label="Subject(s) Selected:",
-                                      choices=subjs,
-                                      selected=list("Mathematics", "Reading"),
-                                      #type="select",
-                                      multiple=TRUE
-                                      )
-                         ),
-                     column(3,
-                         selectInput(inputId="selectSummGrades", 
-                                      label="Grade(s) Selected:",
-                                      choices=grades,
-                                      selected=grades,
-                                      #type="select",
-                                      multiple=TRUE
-                                      )
-                         )
-             ),
-             fluidRow(
-               column(3, p(), p(),
-                         helpText("You can select different columns in this table using Command+clicking (Mac) or Control+clicking (PC):")
-                         ),
-               column(9,
-                         selectInput(inputId="selectSummCols", 
-                                      label="Columns Selected:",
-                                      choices=cols,
-                                      selected=cols.selected,
-                                      multiple=TRUE
-                                     )
+                      ),
+               column(4,
+                      selectInput(inputId="selectSummSeason", 
+                                  label="Growth Season(s) Selected:",
+                                  choices=seasons,
+                                  selected="Fall - Spring",
+                                  #type="select",
+                                  multiple=TRUE
+                                  )
+                      ),
+               column(4,
+                      selectInput(inputId="selectSummSubj", 
+                                  label="Subject(s) Selected:",
+                                  choices=subjs,
+                                  selected=list("Mathematics", "Reading"),
+                                  #type="select",
+                                  multiple=TRUE
+                                  )
                       )
                ),
-             hr(),
-             fluidRow(
+      fluidRow(
+        column(3,
+               selectInput(inputId="selectSummSchool", 
+                           label="School(s) Selected:",
+                           choices=schools,
+                           selected=c("KAP", "KAMS", "KCCP", "KBCP"),
+                           #type="select",
+                           multiple=TRUE
+                           )
+               ),
+        column(3,
+               selectInput(inputId="selectSummGrades", 
+                           label="Grade(s) Selected:",
+                           choices=grades,
+                           selected=grades,
+                           #type="select",
+                           multiple=TRUE
+                           )
+               ),
+        column(6,
+               selectInput(inputId="selectSummCols", 
+                           label="Columns Selected:",
+                           choices=cols,
+                           selected=cols.selected,
+                           multiple=TRUE
+                           )
+               )
+        ),
+      fluidRow(
                column(12,
                       dataTableOutput("sum_table")
-               )
+                      )
              )
-             ),
+      ),
     tabPanel("Student Data",
              h3("Student-level Summary", span(class="label label-default","New")),
              dataTableOutput("main_table")

@@ -33,36 +33,15 @@ log("Loading dataset...")
 
 load("data/map_FW.Rdata")
 load("data/map_all.Rdata")
+load("data/map_all_growth.Rdata")
+load("data/map_all_growth_sum.Rdata")
+load("data/map_all_growth_sum_p.Rdata")
 
 
 # Tabular summary for Winter 14 (should be abstracted and moved to lib)
 tabSummaryMAP <- function(.data, school="KAMS"){
   dt<-copy(.data)
-  dt.sum<-dt[SchoolInitials %in% school,
-             list("Total Tested F & W"= .N, 
-                  "# >= Typical NWEA" = sum(Winter_RIT>=ProjectedGrowth),  
-                  "% >= Typical NWEA" = round(sum(Winter_RIT>=ProjectedGrowth)/.N,2), 
-                  "# >= Typical Tracker" = sum(Winter_RIT>=Fall_RIT+(ReportedFallToSpringGrowth/2)),  
-                  "% >= Typical Tracker" = round(sum(Winter_RIT>=Fall_RIT+(ReportedFallToSpringGrowth/2))/.N,2), 
-                  "# >= College Ready NWEA" = sum(Winter_RIT>=Fall_RIT+(ReportedFallToWinterGrowth*KIPPTieredGrowth)),
-                  "% >= College Ready NWEA" = round(sum(Winter_RIT>=Fall_RIT+(ReportedFallToWinterGrowth*KIPPTieredGrowth))/.N,2),
-                  "# >= College Ready Tracker" = sum(Winter_RIT>=Fall_RIT+(ReportedFallToSpringGrowth*KIPPTieredGrowth/2)),
-                  "% >= College Ready Tracker" = round(sum(Winter_RIT>=Fall_RIT+(ReportedFallToSpringGrowth*KIPPTieredGrowth/2))/.N,2),
-                  "# >= 50th Percentile Fall" = sum(Fall_Pctl>=50),
-                  "% >= 50th Percentile Fall" = round(sum(Fall_Pctl>=50)/.N,2),
-                  "# >= 50th Percentile Winter" = sum(Winter_Pctl>=50),
-                  "% >= 50th Percentile Winter" = round(sum(Winter_Pctl>=50)/.N,2),
-                  "# >= 75th Percentile Fall" = sum(Fall_Pctl>=75),
-                  "% >= 75th Percentile Fall" = round(sum(Fall_Pctl>=75)/.N,2),
-                  "# >= 75th Percentile Winter" = sum(Winter_Pctl>=75),
-                  "% >= 75th Percentile Winter" = round(sum(Winter_Pctl>=75)/.N,2)
-                  ), 
-             by=list(SY, SchoolInitials, 
-                     Winter_Grade, 
-                     Subject)]
-  setnames(dt.sum, c("SchoolInitials", "Winter_Grade"),
-           c("School", "Grade"))
-  
+  dt.sum<-dt[School %in% school]
   dt.sum[order(School, Subject, Grade)]
 }
 
@@ -131,70 +110,72 @@ shinyServer(function(input, output, session) {
   })
   
    
-  
-  output$main_plot <- renderPlot({
-   
-    
-    log("Plotting MAP Results...")
-    
-    
-    ptitle <- paste0(input$school, 
-                     " 2013-14 Fall to Winter MAP Scores ",
-                     input$grade,
-                     " ",
-                     input$subject, 
-                     "\nFall and Spring RIT Scores vs Expected Growth and College Ready Growth\nby Fall Quartile")
-   
-    # using try() catch an error because renderPlot trys to execute plot_waterfall
-    #  before the observer recieves all data from the renderUIs for school, grade, subjectx
-    
-    
-    
-    withProgress(session, min=1, max=15, {
-      
-      
-      setProgress(message = 'Chasing Waterfalls...',
-                  detail = 'This may take a while...')
-      
-      setProgress(value = 10, detail="Subsetting Data")
-    
-    
-    p<-try(plot_waterfall(getData(), 
-                      ptitle, 
-                      season1="Fall", 
-                      season2="Winter",
-                      labxpos=100, 
-                      minx=95,
-                      alp=.6,
-                      text_factor=1.25
-                      ),
-           silent=TRUE)
-    
-    
-      
-      print(p)
-      
-  
-      
-      setProgress(value=15, detail="Drawing the waterfalls!")
-    }) 
-  }
-)
-  
+  # Waterfalls
+#   output$main_plot <- renderPlot({
+#    
+#     
+#     log("Plotting MAP Results...")
+#     
+#     
+#     ptitle <- paste0(input$school, 
+#                      " 2013-14 Fall to Winter MAP Scores ",
+#                      input$grade,
+#                      " ",
+#                      input$subject, 
+#                      "\nFall and Spring RIT Scores vs Expected Growth and College Ready Growth\nby Fall Quartile")
+#    
+#     # using try() catch an error because renderPlot trys to execute plot_waterfall
+#     #  before the observer recieves all data from the renderUIs for school, grade, subjectx
+#     
+#     
+#     
+#     withProgress(session, min=1, max=15, {
+#       
+#       
+#       setProgress(message = 'Chasing Waterfalls...',
+#                   detail = 'This may take a while...')
+#       
+#       setProgress(value = 10, detail="Subsetting Data")
+#     
+#     
+#     p<-try(plot_waterfall(getData(), 
+#                       ptitle, 
+#                       season1="Fall", 
+#                       season2="Winter",
+#                       labxpos=100, 
+#                       minx=95,
+#                       alp=.6,
+#                       text_factor=1.25
+#                       ),
+#            silent=TRUE)
+#     
+#     
+#       
+#       print(p)
+#       
+#   
+#       
+#       setProgress(value=15, detail="Drawing the waterfalls!")
+#     }) 
+#   }
+# )
+
+# Main Table ####
 output$main_table <- renderDataTable({
-   tbData <- map.data
-   tbData[,list(SY,
-                SchoolInitials, 
-                Fall_Grade, 
-                StudentLastName, 
-                StudentFirstName, 
-                Subject,
-                Fall_RIT, 
-                Fall_Pctl, 
-                ProjectedGrowth, 
-                CollegeReadyGrowth, 
-                Winter_RIT, 
-                Winter_Pctl)] 
+   
+  map.all.growth[,list("School Year" =SY,
+                "Growth Season"=GrowthSeason,
+                "School" = SchoolInitials, 
+                Grade, 
+                "Last Name" = StudentLastname, 
+                "First Name" = StudentFirstname, 
+                "Subject" = MeasurementScale,
+                "Seasone 1 RIT" = TestRITScore, 
+                "Season 1 Percentile"=TestPercentile, 
+                "Typical Target"=TypicalTarget,
+                "College Ready Target"= CollegeReadyTarget, 
+                "Season 2 RIT" = TestRITScore.2, 
+                "Season 2 Percentile"=TestPercentile.2)] 
    }, 
    options = list(bSortClasses=TRUE,
                   aLengthMenu = list(c(5,25, 50, 100, -1), 
@@ -208,34 +189,10 @@ output$main_table <- renderDataTable({
                   )
    )
 
+
+# Summary Table ####  
 getSummaryTable <- reactive({
-  tbSchools<-tabSummaryMAP(map.data, map.data[,unique(SchoolInitials)]) 
-  tbSchools[,School:=as.character(School)]
-  tbRegion<-map.data[,
-                     list("Total Tested F & W"= .N, 
-                          "# >= Typical NWEA" = sum(Winter_RIT>=ProjectedGrowth),  
-                          "% >= Typical NWEA" = round(sum(Winter_RIT>=ProjectedGrowth)/.N,2), 
-                          "# >= Typical Tracker" = sum(Winter_RIT>=Fall_RIT+(ReportedFallToSpringGrowth/2)),  
-                          "% >= Typical Tracker" = round(sum(Winter_RIT>=Fall_RIT+(ReportedFallToSpringGrowth/2))/.N,2), 
-                          "# >= College Ready NWEA" = sum(Winter_RIT>=Fall_RIT+(ReportedFallToWinterGrowth*KIPPTieredGrowth)),
-                          "% >= College Ready NWEA" = round(sum(Winter_RIT>=CollegeReadyGrowth)/.N,2),
-                          "# >= College Ready Tracker" = sum(Winter_RIT>=Fall_RIT+(ReportedFallToSpringGrowth*KIPPTieredGrowth/2)),
-                          "% >= College Ready Tracker" = round(sum(Winter_RIT>=Fall_RIT+(ReportedFallToSpringGrowth*KIPPTieredGrowth/2))/.N,2),
-                          "# >= 50th Percentile Fall" = sum(Fall_Pctl>=50),
-                          "% >= 50th Percentile Fall" = round(sum(Fall_Pctl>=50)/.N,2),
-                          "# >= 50th Percentile Winter" = sum(Winter_Pctl>=50),
-                          "% >= 50th Percentile Winter" = round(sum(Winter_Pctl>=50)/.N,2),
-                          "# >= 75th Percentile Fall" = sum(Fall_Pctl>=75),
-                          "% >= 75th Percentile Fall" = round(sum(Fall_Pctl>=75)/.N,2),
-                          "# >= 75th Percentile Winter" = sum(Winter_Pctl>=75),
-                          "% >= 75th Percentile Winter" = round(sum(Winter_Pctl>=75)/.N,2)
-                     ), 
-                     by=list(SY, Winter_Grade, 
-                             Subject)]
-  setnames(tbRegion, "Winter_Grade", "Grade")
-  tbRegion[,School:="KIPP Chicago"]
-  
-  tbData<-rbind(tbSchools, tbRegion)
+  tbData<-tabSummaryMAP(map.all.growth.sum, map.all.growth.sum[,unique(School)]) 
   
   tbData[,Grade:=factor(Grade, levels=c("K", 1:8))]
   
@@ -247,8 +204,8 @@ getSummaryTable <- reactive({
                           )
          ]
   
-  tbData[,School:=factor(School, 
-                         levels=c("KIPP Chicago",
+  tbData[,School:=factor(as.character(School), 
+                         levels=c("Region",
                                   "KAP",
                                   "KAMS",
                                   "KCCP",
@@ -259,13 +216,17 @@ getSummaryTable <- reactive({
   
   tbData<-tbData[School %in% input$selectSummSchool & 
                    SY %in% input$selectSummSY &
+                   GrowthSeason %in% input$selectSummSeason &
                    Subject %in% input$selectSummSubj &
                    Grade %in% input$selectSummGrades
                  ][order(SY, Subject, Grade, School)]
   
-  setnames(tbData, "SY", "School Year")
+  setnames(tbData, 
+           c("SY", "GrowthSeason"), 
+           c("School Year", "S1-S2")
+           )
   if(nrow(tbData)==0) return()
-  tbData[,c("School Year", "Subject", "School", "Grade", input$selectSummCols), with=F]
+  tbData[,c("School Year", "S1-S2", "Subject", "School", "Grade", input$selectSummCols), with=F]
   
 })
 
@@ -302,5 +263,41 @@ output$reg_sum_table <-renderDataTable({
   
   tbData[order(SY, Subject, Grade)]
 })
+
+# Dashboard ####
+# Dashboard panel plot ####
+output$dashboard_panel <- renderPlot({
+  
+  y.actual<-input$selectDBStat
+  y.label<-switch(y.actual,
+                  "Pct.Typical" = "Percent M/E Typical Growth" ,
+                  "Pct.CR" ="Percent M/E College Ready Growth",
+                  "Pct.50.S2" = "Percent >= 50th %ile (season 2)",
+                  "Pct.75.S2"="Percent >= 50th %ile (season 2)" 
+                  )
+  p<-ggplot(map.all.growth.sum.p[GrowthSeason==input$selectDBSeason & 
+                                Subject %in% input$selectDBSubject & 
+                                School!="Region" & 
+                                N.S1.S2>=10], 
+            aes_string(x='gsub("20","",SY)', 
+                       y=paste0(y.actual,'*100')
+                       )
+            ) + 
+    geom_line(aes(group=School, color=School)) +
+    geom_point(color="white", size=10) +
+    geom_hline(aes(yintercept=80), color="lightgray") +
+    geom_text(aes_string(label=paste0('paste(',y.actual,'*100,"%",sep="")'), 
+                         color="School"),
+              size=3) +
+    facet_grid(Subject~Grade) +
+    theme_bw() + 
+    theme(legend.position="bottom") +
+    xlab("School Year") +
+    ylab(y.label) 
+  
+  
+  print(p)
+  
+  })
 
 })

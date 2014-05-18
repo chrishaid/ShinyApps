@@ -71,7 +71,7 @@ shinyUI(fluidPage(
 #                )
 #              ),
 #     
-    tabPanel("MAP Vizs",
+    tabPanel("Visualization",
              fluidRow(
                column(4,
                       selectInput(inputId="selectDBSeason",

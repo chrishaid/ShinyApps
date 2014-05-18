@@ -2,6 +2,138 @@
 # 2013
 # Spring 2014, Christopher J Haid and KIPP Chicago
 
+kipp_quartile<- function(x, 
+                        return.factor=TRUE, 
+                        proper.quartile=FALSE){
+  # Calculates the (IPP Foundation's (kinda fucked up) quartile (i.e., the foundation
+  # breaks with stanard mathematical pracitce and puts the 50th percenile
+  # in the  3rd rather than the 2nd quartile). Weird, I know
+  #
+  # Args:
+  #   x: a vector of percentiles 
+  #   return.factor: boolean indicating wether to return quartiles as a factor, default is TRUE.
+  #   proper.quartile: booliean indicating wehter to fix Foundations crazy quaritle, defaul is FALSE
+
+  #
+  # Returns:
+  #   a vector of quartiles 
+  
+  #defactor factors
+  if(is.factor(x)) x<-as.numeric(as.character(x))
+  
+  # Error handling 
+  stopifnot(x>0 | is.na(x), x<100 | is.na(x))
+  
+  # if proper.quartle is false adjust x's to return Foundation quartile 
+  if(!proper.quartile) x<-x+1
+  #calculate quartile
+  y<-ceiling(x/25)
+  
+  #transform to factor
+  if(return.factor) y<-factor(y, levels=c(1:4))
+  
+  #return
+  y
+}
+
+tiered_growth<- function(quartile, grade){
+  # Function takes a data table and along with the names of the quartile indicator
+  # and grade indicator columns and returns a data.table with the 1 extra column
+  # providing the KIPP Foundations Tiered Growth guidelines. 
+  #
+  # Args:
+  #   quartile:  vector student quartiles
+  #   grade:     vector of grade levels, mus be same length as quartile
+  #
+  # Returns:
+  #   a vector of tiered growth facts of lenght nrow(quartile)
+  
+  require(dplyr)
+  #Error handling 
+  stopifnot(length(quartile)==length(grade))
+  
+  # Create data.frame lookup of KIPP Foundation Growth Targts
+  tgrowth<-data.frame(grade.type=c(rep(0,4),rep(1,4)), 
+                      quartile = as.factor(rep(1:4, 2)), 
+                      KIPPTieredGrowth=c(1.5,1.5,1.25,1.25,2,1.75,1.5,1.25)
+                      )
+
+  #
+  grade.type<-rep(NA,times=length(quartile))
+  
+  # Create Grade Type column
+  grade.type<-ifelse(grade<=3, 0,1)
+  
+  df<-data.frame(grade, grade.type, quartile=as.factor(quartile))
+
+  df2<-left_join(df, tgrowth, by=c("quartile", "grade.type"))
+  
+  #return
+  df2$KIPPTieredGrowth
+  
+}
+
+# capture dots
+dots <- function(...) {
+  eval(substitute(alist(...)))
+}
+
+
+nwea_growth<- function(start.grade, 
+                       start.rit, 
+                       measurementscale, 
+                       ...){
+  # Function takes three vectors for grade, RIT, and MeasurementScale
+  # (usually from a CDF) and return a ruterns data.frame of typical growth
+  # calculations for each
+  #
+  # Args:
+  #   start.grade:  vector student start.grade (pre-test grade)
+  #   start.rit:     vector of start.rits (pre-test RITS)
+  #   measurementscale:     vector of Measurement Scales
+  #   ...: arguments passed to dplyr:filter, used to filter
+  #          norms data.  You pass T42, S22, R12 as unevaluated args
+  #
+  # Returns:
+  #   a vector of tiered growth facts of lenght nrow(quartile)
+  
+  require(dplyr)
+  require(mapvisuals)
+  
+  stopifnot(all.equal(length(start.grade), 
+                      length(start.rit), 
+                      length(measurementscale)
+                      )
+            )
+  
+  subs<-dots(...)
+  
+  data(norms_students_2011, envir=environment())
+  
+  norms<-select(norms_students_2011, 
+                Grade=StartGrade,
+                TestRITScore=StartRIT,
+                MeasurementScale,
+                T41:S12)
+
+  df<-data.frame(Grade=as.integer(start.grade), 
+                 TestRITScore=as.integer(start.rit), 
+                 MeasurementScale=as.character(measurementscale),
+                 stringsAsFactors = FALSE)
+  
+  df2 <- left_join(df, 
+                   norms, 
+                   by=c("MeasurementScale", "Grade", "TestRITScore")) %.%
+    select(-Grade, -TestRITScore, -MeasurementScale)
+  
+  df2<-df2[,names(df2)[order(names(df2))]]
+  
+  if(length(subs)>=1) df2<-select(df2, ...)
+  
+  df2
+}
+
+
 calc_quartile <- function(dtable, percentile.column = "TestPercentile", quartile.col.name=NULL){
   # This function takes a data.table, inspects its percentile colum and 
   # determins the recods's quartiel. A new data.table with an extra column 

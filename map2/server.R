@@ -291,8 +291,9 @@ output$dashboard_panel <- renderPlot({
               size=3) +
     facet_grid(Subject~Grade) +
     theme_bw() + 
+    theme(legend.position="bottom") +
     xlab("School Year") +
-    ylab(y.label)
+    ylab(y.label) 
   
   
   print(p)

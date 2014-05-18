@@ -366,3 +366,76 @@ PrepMAP <- function (map.dt, season1, season2, growth.type="KIPP") {
   map.dt
   
 }
+
+
+s2s_match <- function(.data, 
+                      season1="Fall", 
+                      season2="Spring", 
+                      sy=2013,
+                      typical.growth=TRUE,
+                      college.ready=FALSE){
+  require(dplyr)
+  
+  stopifnot(season1 %in% c("Fall", "Spring", "Winter"), 
+            season2 %in% c("Fall", "Spring", "Winter"),
+            is.numeric(sy),
+            is.data.frame(.data),
+            is.logical(typical.growth),
+            is.logical(college.ready)
+            )
+  
+  
+  # Filter to Season1
+  # If season1=season2, i.e., spring-spring, roll Year2 back one year
+  sy1<-sy
+  if(season1==season2) sy1 <- sy-1
+  m.1<-filter(.data, Season==season1, Year2==sy1)
+  
+  # Filter to Season2
+  m.2<-filter(.data, Season==season2, Year2==sy)
+  
+  
+  # Join on ID and MeasurementScale
+  m.12<-inner_join(m.1, m.2, by=c("StudentID", "MeasurementScale"))
+  
+  # growth calculations
+  if(typical.growth | college.ready){
+    # construct and substitute names
+    seasons <-paste0(season1,season2)
+    norm.season <- as.name(switch(seasons,
+                                  "FallFall"     = "R44.x", #appended x because these appear twice after the join
+                                  "FallSpring"   = "R42.x",
+                                  "FallWinter"   = "R41.x",
+                                  "WinterSpring" = "R12.x",
+                                  "SpringSpring" = "R22.x"
+                                  )
+                           )
+    if(typical.growth){
+      q<-substitute(norm.season)
+      m.12<-with(m.12, mutate(m.12, 
+                              TypicalGrowth=eval(q), 
+                              TypicalTarget=TypicalGrowth+TestRITScore.x,
+                              MetTypical=TestRITScore.y>=TypicalTarget, 
+                              GrowthSeason=paste(Season.x, Season.y, sep=" - ")
+                              )
+                 )
+    }
+    if(college.ready) {
+      q<-substitute(norm.season * KIPPTieredGrowth.x)
+      m.12 <- with(m.12, mutate(m.12, 
+                                CollegeReadyGrowth=eval(q),
+                                CollegeReadyTarget=TestRITScore.x+CollegeReadyGrowth,
+                                MetCollegeReady=TestRITScore.y>=CollegeReadyTarget
+                                )
+                   )
+    }
+  }  
+  
+  # Rename columns with .x or .y suffixes ot have no suffix for season 1
+  #  and .2 for season 2 suffixes
+  setnames(m.12, gsub("\\.x","",names(m.12)))
+  setnames(m.12, gsub("\\.y",".2",names(m.12)))
+  
+  # return
+  m.12
+}
