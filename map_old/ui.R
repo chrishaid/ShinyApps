@@ -106,13 +106,6 @@ shinyUI(fluidPage(
                       )
                )
       ),
-    tabPanel("Students Tested",
-      h3("Spring 2013-2014 Students Rostered and Tested", span(class="label label-default","New")),
-      fluidRow(column(12,
-        dataTableOutput("dashboard_tested")
-          )
-        )
-    ),
     tabPanel("School Summary Stats",
              h3("School-level Summary", span(class="label label-default","New")),
              fluidRow(

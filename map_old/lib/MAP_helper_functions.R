@@ -5,7 +5,7 @@
 kipp_quartile<- function(x, 
                         return.factor=TRUE, 
                         proper.quartile=FALSE){
-  # Calculates the KIPP Foundation's (kinda fucked up) quartile (i.e., the foundation
+  # Calculates the (IPP Foundation's (kinda fucked up) quartile (i.e., the foundation
   # breaks with stanard mathematical pracitce and puts the 50th percenile
   # in the  3rd rather than the 2nd quartile). Weird, I know
   #
@@ -95,7 +95,7 @@ nwea_growth<- function(start.grade,
   #          norms data.  You pass T42, S22, R12 as unevaluated args
   #
   # Returns:
-  #   a vector of tiered growth factors of length nrow(quartile)
+  #   a vector of tiered growth facts of lenght nrow(quartile)
   
   require(dplyr)
   require(mapvisuals)

@@ -8,10 +8,10 @@ message(print(args[3]))
 
 message("Loading packages")
 library(data.table)
-library(RJDBC)
-library(dplyr)
+#library(RJDBC)
 library(stringr)
 library(mapvisuals)
+library(dplyr)
 
 message("Loading helper functions")
 
@@ -73,4 +73,13 @@ if("no" %in% args[2]){
 
 }
 
+if("no" %in% args[3]){
+  message("Not importing current roster.")
+} else {
+  source('current.roster.R')
+  if("no" %in% args[2]) load("map_all.Rdata")
+  source('../munge/04-current_roster.R')
+  save(tested.summary, file="tested_summary.Rdata")
+}
+  
 system('touch ../restart.txt')

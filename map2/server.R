@@ -36,6 +36,7 @@ load("data/map_all.Rdata")
 load("data/map_all_growth.Rdata")
 load("data/map_all_growth_sum.Rdata")
 load("data/map_all_growth_sum_p.Rdata")
+load("data/tested_summary.Rdata")
 
 
 # Tabular summary for Winter 14 (should be abstracted and moved to lib)
@@ -265,6 +266,21 @@ output$reg_sum_table <-renderDataTable({
 })
 
 # Dashboard ####
+# Dashboard numbers tested plot ####
+output$dashboard_tested <- renderDataTable({
+  tested.summary
+},
+options = list(bSortClasses=TRUE,
+               aLengthMenu = list(c(5, 10, 15, -1), 
+                                  list(5, 10, 15, 'All')
+               ),
+               iDisplayLength = 50,
+               "sDom"='T<"clear">lfrtip',
+               "oTableTools"=list(
+                 "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+               )
+)
+  )
 # Dashboard panel plot ####
 output$dashboard_panel <- renderPlot({
   

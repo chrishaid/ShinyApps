@@ -1,6 +1,3 @@
-#### Get MAP Data ####
-
-
 message('Reading configuration')
 sconfig <- as.list(read.dcf("../config/map2.dcf", all=TRUE))
 #### Attach to Testing Server
@@ -10,11 +7,10 @@ mapsrc<-src_mysql(dbname=sconfig$DB,
                   password=sconfig$PWD)
 
 # pull data
-message('Contacting server and querying results for all years')
+message('Contacting server and querying results for current roster')
 
-# get viewAllAssessments
-map.all<-collect(tbl(mapsrc, "viewAllAssessments"))
-map.all <- filter(map.all, GrowthMeasureYN=="TRUE")
+current.roster<-collect(tbl(mapsrc, "tbl_PS_Roster_All"))
+
 
 
 
