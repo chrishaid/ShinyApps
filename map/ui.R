@@ -4,8 +4,7 @@ require(shinyIncubator)
 schools <- list("Region", "KAP", "KAMS", "KCCP", "KBCP")
 sys <- list("2013-2014", "2012-2013", "2011-2012")
 subjs <-  list("Mathematics", 
-               "Reading", 
-               "Language Usage", 
+               "Reading",  
                "General Science"
                )
 grades <- c("K", 1:8)
@@ -48,6 +47,7 @@ cols.selected <- c("N (both seasons)",
 
 shinyUI(fluidPage(
   tags$head( 
+    tags$link(href='static/css/shinyprogress.css', rel="stylesheet", type="text/css"), 
     tags$link(href='static/css/dataTables.tableTools.css', rel="stylesheet", type="text/css"), 
     tags$script(src='static/js/jquery.dataTables.js'),
     tags$script(src='static/js/dataTables.tableTools.js')
@@ -72,6 +72,7 @@ shinyUI(fluidPage(
 #              ),
 #     
     tabPanel("Visualization",
+             h3("MAP Performance over Time"),
              fluidRow(
                column(4,
                       selectInput(inputId="selectDBSeason",
@@ -102,6 +103,7 @@ shinyUI(fluidPage(
                ),
              fluidRow(
                column(12,
+                      progressInit(),
                       plotOutput("dashboard_panel")
                       )
                )

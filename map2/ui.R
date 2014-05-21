@@ -4,8 +4,7 @@ require(shinyIncubator)
 schools <- list("Region", "KAP", "KAMS", "KCCP", "KBCP")
 sys <- list("2013-2014", "2012-2013", "2011-2012")
 subjs <-  list("Mathematics", 
-               "Reading", 
-               "Language Usage", 
+               "Reading",  
                "General Science"
                )
 grades <- c("K", 1:8)
@@ -73,6 +72,7 @@ shinyUI(fluidPage(
 #              ),
 #     
     tabPanel("Visualization",
+             h3("MAP Performance over Time"),
              fluidRow(
                column(4,
                       selectInput(inputId="selectDBSeason",

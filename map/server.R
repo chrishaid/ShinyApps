@@ -284,35 +284,48 @@ options = list(bSortClasses=TRUE,
 # Dashboard panel plot ####
 output$dashboard_panel <- renderPlot({
   
-  y.actual<-input$selectDBStat
-  y.label<-switch(y.actual,
-                  "Pct.Typical" = "Percent M/E Typical Growth" ,
-                  "Pct.CR" ="Percent M/E College Ready Growth",
-                  "Pct.50.S2" = "Percent >= 50th %ile (season 2)",
-                  "Pct.75.S2"="Percent >= 50th %ile (season 2)" 
-                  )
-  p<-ggplot(map.all.growth.sum.p[GrowthSeason==input$selectDBSeason & 
-                                Subject %in% input$selectDBSubject & 
-                                School!="Region" & 
-                                N.S1.S2>=10], 
-            aes_string(x='gsub("20","",SY)', 
-                       y=paste0(y.actual,'*100')
-                       )
-            ) + 
-    geom_line(aes(group=School, color=School)) +
-    geom_point(color="white", size=10) +
-    geom_hline(aes(yintercept=80), color="lightgray") +
-    geom_text(aes_string(label=paste0('paste(',y.actual,'*100,"%",sep="")'), 
-                         color="School"),
-              size=3) +
-    facet_grid(Subject~Grade) +
-    theme_bw() + 
-    theme(legend.position="bottom") +
-    xlab("School Year") +
-    ylab(y.label) 
+  withProgress(session, min=1, max=10, {
+       setProgress(message = 'Loading MAP data',
+                      detail = 'This may take a while...')
+   
+       setProgress(value = 3, message="Filtering metric...")
   
+       y.actual<-input$selectDBStat
+        
+       y.label<-switch(y.actual,
+                     "Pct.Typical" = "Percent M/E Typical Growth" ,
+                     "Pct.CR" ="Percent M/E College Ready Growth",
+                     "Pct.50.S2" = "Percent >= 50th %ile (season 2)",
+                      "Pct.75.S2"="Percent >= 50th %ile (season 2)" 
+                      )
+       
+       setProgress(value = 5, message="Building visualization",
+                   detail="This can take a minute...")
+       
+       p<-ggplot(map.all.growth.sum.p[GrowthSeason==input$selectDBSeason & 
+                                  Subject %in% input$selectDBSubject & 
+                                  School!="Region" & 
+                                  N.S1.S2>=10], 
+                 aes_string(x='gsub("20","",SY)', 
+                         y=paste0(y.actual,'*100')
+                         )
+                ) + 
+        geom_line(aes(group=School, color=School)) +
+        geom_point(color="white", size=10) +
+        geom_hline(aes(yintercept=80), color="lightgray") +
+        geom_text(aes_string(label=paste0('paste(',y.actual,'*100,"%",sep="")'), 
+                             color="School"),
+                  size=3) +
+        facet_grid(Subject~Grade) +
+        theme_bw() + 
+        theme(legend.position="bottom") +
+        xlab("School Year") +
+        ylab(y.label) 
   
   print(p)
+  setProgress(value = 9, detail="Drawing visualization!!!")
+  
+  })
   
   })
 
