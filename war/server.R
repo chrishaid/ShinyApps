@@ -30,7 +30,7 @@ impact$Difference<-impact$Impact - impact$PowerSchool
 
 
 #### Shiny Server output code ####
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   #Impact and PowerSchool Comparison
   output$impact <- renderPrint(kable(impact, 
                                       format='html', 
@@ -73,7 +73,15 @@ shinyServer(function(input, output) {
   # can't plot a line with only one point (so need)
   
   ggAttend <- function(){
+    withProgress(session, min=1, max=10, {
+      setProgress(message = 'Tallying students-days',
+                  detail = 'There are alot! This may take a while...')
+      
+      setProgress(value = 3, message="Getting data")
+      
     DAE.dt <- getDAE()
+    
+    setProgress(value = 5, message="Building visualization")
   if(DAE.dt[max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel), 
             length(unique(Date))]==1){
     p <- ggplot(DAE.dt[Date<max(Date),], aes(x=Day, y=value))
@@ -100,7 +108,10 @@ shinyServer(function(input, output) {
           axis.title.y=element_text(size=10),
           legend.text=element_text(size=12)
     )
+  setProgress(value = 7, message="Drawing visualization", 
+              detail="Be done in a jiffy!")
   print(p)
+    })
   }
   output$plotAttendEnroll <- renderPlot(ggAttend())
   

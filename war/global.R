@@ -8,6 +8,7 @@ library(reshape)
 library(knitr)
 library(RCurl)
 library(xtable)
+require(shinyIncubator)
 
 # source helper functions:
 message("Loading helper libraries")

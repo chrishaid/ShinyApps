@@ -48,6 +48,7 @@ cols.selected <- c("N (both seasons)",
 
 shinyUI(fluidPage(
   tags$head( 
+    tags$link(href='static/css/shinyprogress.css', rel="stylesheet", type="text/css"), 
     tags$link(href='static/css/dataTables.tableTools.css', rel="stylesheet", type="text/css"), 
     tags$script(src='static/js/jquery.dataTables.js'),
     tags$script(src='static/js/dataTables.tableTools.js')
@@ -102,6 +103,7 @@ shinyUI(fluidPage(
                ),
              fluidRow(
                column(12,
+                      progressInit(),
                       plotOutput("dashboard_panel")
                       )
                )
