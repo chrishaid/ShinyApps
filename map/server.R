@@ -342,6 +342,7 @@ output$dashboard_panel <- renderPlot({
                                 color="School"),
                      size=3) +
            scale_color_manual(values = c("#439539", "purple", "#C49A6C", "#60A2D7" )) +
+           scale_x_continuous(breaks=-1:9, labels=c(NA, "K", 1:8, NA)) +
            facet_grid(Subject~Class2) +
            theme_bw() + 
            theme(legend.position="bottom") +
