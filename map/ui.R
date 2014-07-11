@@ -74,7 +74,7 @@ shinyUI(fluidPage(
     tabPanel("Visualization",
              h3("MAP Performance over Time"),
              fluidRow(
-               column(4,
+               column(2,
                       selectInput(inputId="selectDBSeason",
                                   label="Growth Season:",
                                   choices=seasons,
@@ -98,6 +98,15 @@ shinyUI(fluidPage(
                                             "Percent >= 75th %ile (season 2)"= "Pct.75.S2" 
                                             ),
                                   selected="Pct.Typical"
+                                  )
+                      ),
+               column(2,
+                      selectInput(inputId="selectDBCohort",
+                                  label="View by:",
+                                  choices=c("Grade",
+                                            "Cohort (Class of...)" = "Class"
+                                            ),
+                                  selected="Grade"
                                   )
                       )
                ),
@@ -159,7 +168,7 @@ shinyUI(fluidPage(
         column(3,
                selectInput(inputId="selectSummGrades", 
                            label="Grade(s) Selected:",
-                           choices=grades,
+                           choices=c(0:3,5:8),
                            selected=grades,
                            #type="select",
                            multiple=TRUE

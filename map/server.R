@@ -302,25 +302,54 @@ output$dashboard_panel <- renderPlot({
        setProgress(value = 5, message="Building visualization",
                    detail="This can take a minute...")
        
-       p<-ggplot(map.all.growth.sum.p[GrowthSeason==input$selectDBSeason & 
-                                  Subject %in% input$selectDBSubject & 
-                                  School!="Region" & 
-                                  N.S1.S2>=10], 
-                 aes_string(x='gsub("20","",SY)', 
-                         y=paste0(y.actual,'*100')
-                         )
-                ) + 
-        geom_line(aes(group=School, color=School)) +
-        geom_point(color="white", size=10) +
-        geom_hline(aes(yintercept=80), color="lightgray") +
-        geom_text(aes_string(label=paste0('paste(',y.actual,'*100,"%",sep="")'), 
-                             color="School"),
-                  size=3) +
-        facet_grid(Subject~Grade) +
-        theme_bw() + 
-        theme(legend.position="bottom") +
-        xlab("School Year") +
-        ylab(y.label) 
+       
+       if(input$selectDBCohort=="Grade") {
+         p<-ggplot(map.all.growth.sum.p[GrowthSeason==input$selectDBSeason & 
+                                          Subject %in% input$selectDBSubject & 
+                                          School!="Region" & 
+                                          N.S1.S2>=10], 
+                   aes_string(x='gsub("20","",SY)', 
+                              y=paste0(y.actual,'*100')
+                   )
+         ) + 
+           geom_line(aes(group=School, color=School)) +
+           geom_point(color="white", size=10) +
+           geom_hline(aes(yintercept=80), color="lightgray") +
+           geom_text(aes_string(label=paste0('paste(',y.actual,'*100,"%",sep="")'), 
+                                color="School"),
+                     size=3) +
+           scale_color_manual(values = c("#439539", "purple", "#C49A6C", "#60A2D7")) +
+           facet_grid(Subject~Grade) +
+           theme_bw() + 
+           theme(legend.position="bottom") +
+           xlab("School Year") +
+           ylab(y.label) 
+       } 
+       if(input$selectDBCohort=="Class"){
+         p<-ggplot(map.all.growth.sum.p[GrowthSeason==input$selectDBSeason & 
+                                          Subject %in% input$selectDBSubject & 
+                                          School!="Region" & 
+                                          N.S1.S2>=10 &
+                                        Class>=2018], 
+                   aes_string(x='Grade', 
+                              y=paste0(y.actual,'*100')
+                   )
+         ) + 
+           geom_line(aes(group=School, color=School)) +
+           geom_point(color="white", size=10) +
+           geom_hline(aes(yintercept=80), color="lightgray") +
+           geom_text(aes_string(label=paste0('paste(',y.actual,'*100,"%",sep="")'), 
+                                color="School"),
+                     size=3) +
+           scale_color_manual(values = c("#439539", "purple", "#C49A6C", "#60A2D7" )) +
+           facet_grid(Subject~Class2) +
+           theme_bw() + 
+           theme(legend.position="bottom") +
+           xlab("Grade") +
+           ylab(y.label)   
+       }
+       
+       
   
   print(p)
   setProgress(value = 9, detail="Drawing visualization!!!")

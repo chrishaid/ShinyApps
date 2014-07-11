@@ -100,12 +100,13 @@ map.all.growth.sum<-map.all.growth[,list("N (both seasons)"= .N,
                             GrowthSeason, 
                             SchoolInitials, 
                             Grade.2, 
+                            CohortYear,
                             MeasurementScale)
                     ]
 
 setnames(map.all.growth.sum, 
-         c("SchoolInitials", "Grade.2", "MeasurementScale", "SY.2"),
-         c("School", "Grade", "Subject", "SY")
+         c("SchoolInitials", "Grade.2", "MeasurementScale", "SY.2", "CohortYear"),
+         c("School", "Grade", "Subject", "SY", "Class")
          )
 
 map.all.growth.sum.reg<-map.all.growth[,list("School"="Region",
@@ -126,12 +127,13 @@ map.all.growth.sum.reg<-map.all.growth[,list("School"="Region",
                                        by=list(SY.2, 
                                                GrowthSeason, 
                                                Grade.2, 
+                                               CohortYear,
                                                MeasurementScale)
                                        ]
 
 setnames(map.all.growth.sum.reg, 
-         c("Grade.2", "MeasurementScale", "SY.2"),
-         c("Grade", "Subject", "SY")
+         c("Grade.2", "MeasurementScale", "SY.2", "CohortYear"),
+         c("Grade", "Subject", "SY", "Class")
          )
 
 map.all.growth.sum<-rbind(map.all.growth.sum,map.all.growth.sum.reg)
@@ -144,6 +146,7 @@ setnames(map.all.growth.sum.p,
            "GrowthSeason",
            "School",
            "Grade",
+           "Class",
            "Subject",
            "N.S1.S2",
            "N.Typical",
@@ -161,3 +164,20 @@ setnames(map.all.growth.sum.p,
            )
          )
 
+map.all.growth.sum.p<-na.omit(map.all.growth.sum.p)
+
+require(dplyr)
+class_current_grade<-group_by(map.all.growth.sum.p, 
+                              by=Class) %>% 
+  summarize(Grade=max(Grade)) %>% 
+  mutate(Class2=paste0(Class, 
+                       "\n(Current grade: ", 
+                       Grade, ")")
+         ) %>%
+  select(Class, Class2)
+
+map.all.growth.sum.p<-left_join(map.all.growth.sum.p, 
+                                 class_current_grade, 
+                                 by="Class")
+
+map.all.growth.sum.p<-as.data.table(map.all.growth.sum.p)
