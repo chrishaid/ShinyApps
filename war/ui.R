@@ -99,8 +99,12 @@ shinyUI(
                             strong("after October 1st"), 
                             " and transferred during the school year are ", 
                             strong("not included"), " in in these tables and figures."),
-                       p("Lightly shaded area indicateds transfers by students who moved outside of Chicago.",
-                         "Dark areas indicate transfer by students for reasons other than moving outside of Chicago.")
+                       p(strong("Darker colors"), " indicate the cumulative number of transfers for ",
+                         "reasons other than moving. ", strong("Lighter colors"),  " indicate ",
+                         "the additional transfers for students who moved outside of ",
+                         "the city of Chicago. The ", strong("angled orange lines"), " indicate the rate ",
+                         "at which a 10 percent attrition rate accumulates; it is an indicator ", 
+                         "if we are on track (below the line) or off track (above the line) in a given month.")
                        ),
                    tabsetPanel(
                      tabPanel(title="Visualization",

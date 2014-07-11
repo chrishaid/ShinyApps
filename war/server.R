@@ -238,14 +238,14 @@ shinyServer(function(input, output, session) {
                   y=Value, 
                   group=Variable, 
                   label=paste0(Value,"\n(",Pct,"%)")), 
-              size=2.5,
+              size=3,
               vjust=0) +
     geom_text(data=subset(xferplot2.nm, Variable!="Ceiling"), 
               aes(x=Month, 
                   y=Value, 
                   group=Variable, 
                   label=Value), 
-              size=2.5,
+              size=3,
               vjust=1) +
     facet_grid(Year~School, scale="free_y") +
     scale_fill_manual(values = c("purple",  #KCCP 
@@ -255,9 +255,9 @@ shinyServer(function(input, output, session) {
     )
     ) + theme_bw() + 
     theme(axis.title = element_blank(),
-          axis.text.x = element_text(size=7,angle=45, hjust=1),
-          axis.text.y = element_text(size=7),
-          strip.text = element_text(size=7),
+          axis.text.x = element_text(size=10,angle=45, hjust=1),
+          axis.text.y = element_text(size=10),
+          strip.text = element_text(size=12),
           legend.position="none"
     )     
   
