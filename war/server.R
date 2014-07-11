@@ -176,32 +176,121 @@ shinyServer(function(input, output, session) {
   #### Student Transfers ####
   source('src//transfer_tables.R', local=TRUE)
   
-  TransferPlot <- ggplot(data=subset(xferplot, Variable=="Ceiling"), 
-                         aes(x=Month, y=Value)) + 
+  enrolled<-rbind(group_by(Enrolled.121003, SCHOOLID) %>% 
+                    summarise(N=n()) %>% 
+                    mutate(Year="SY12-13"), 
+                  group_by(Enrolled.131001, SCHOOLID) %>% 
+                    summarise(N=n()) %>% 
+                    mutate(Year="SY13-14")
+  )
+  
+  enrolled$School<-mapply(function(x){ switch(as.character(x),
+                                              "7810" = "KAMS",
+                                              "78102" = "KAP",
+                                              "400146"= "KCCP",
+                                              "400163" = "KBCP"
+  )
+  },
+  enrolled$SCHOOLID
+  )
+  
+  enrolled<-mutate(enrolled, 
+                   School=factor(School, 
+                                 levels=c("KAP", "KAMS", "KCCP", "KBCP")
+                   )
+  )
+  
+  xferplot<-left_join(xferplot, 
+                      select(enrolled, -SCHOOLID), 
+                      by=c("School", "Year")
+  ) 
+  
+  xferplot <- mutate(xferplot, Pct=round(Value/N*100))
+  
+  todays_month<-as.integer(lubridate::month(today(), label = TRUE, abbr = TRUE))
+  
+  #remove cumulative transfers passed this month
+  xferplot2<-xferplot[!(xferplot$Year=="SY13-14" & 
+                          as.integer(xferplot$Month) >= todays_month & 
+                          xferplot$Variable=="Cumulative Transfers"),]
+  
+  xferplot2.nm<-xferplot.nm[!(xferplot.nm$Year=="SY13-14" & 
+                                as.integer(xferplot.nm$Month) >= todays_month & 
+                                xferplot.nm$Variable=="Cumulative Transfers"),]
+  
+  TransferPlot <- ggplot(data=subset(xferplot2, Variable=="Ceiling"), 
+         aes(x=Month, y=Value)) + 
+    geom_area(data=subset(xferplot2, Variable!="Ceiling"), 
+              aes(x=Month, y=CumVal, fill=School, group=School), 
+              stat='identity',
+              #fill="#439539", 
+              width=.5, 
+              alpha=.4) + 
+    geom_area(data=subset(xferplot2.nm, Variable!="Ceiling"), 
+              aes(x=Month, y=CumVal, fill=School, group=School), 
+              stat='identity',
+              #fill="#439539", 
+              width=.5, 
+              alpha=1) + 
     geom_line(aes(group=Variable), color="#E27425") + 
-    geom_bar(data=subset(xferplot, Variable!="Ceiling"), 
-             aes(x=Month, y=Value, fill=School), 
-             stat='identity',
-             #fill="#439539", 
-             width=.5) + 
-    geom_text(data=subset(xferplot, Variable!="Ceiling"), 
-              aes(x=Month, y=Value-.5, group=Variable, label=Value), 
-              size=3,
+    geom_text(data=subset(xferplot2, Variable!="Ceiling"), 
+              aes(x=Month, 
+                  y=Value, 
+                  group=Variable, 
+                  label=paste0(Value,"\n(",Pct,"%)")), 
+              size=2.5,
+              vjust=0) +
+    geom_text(data=subset(xferplot2.nm, Variable!="Ceiling"), 
+              aes(x=Month, 
+                  y=Value, 
+                  group=Variable, 
+                  label=Value), 
+              size=2.5,
               vjust=1) +
     facet_grid(Year~School, scale="free_y") +
     scale_fill_manual(values = c("purple",  #KCCP 
                                  "#439539", #KAMS
                                  "#60A2D7", #KCCP
-                                 "#A7CFEE"  #KBCP
-                                 )
-                      ) + 
-    theme_bw() + 
+                                 "#C49A6C"  #KBCP
+    )
+    ) + theme_bw() + 
     theme(axis.title = element_blank(),
-          axis.text.x = element_text(size=10,angle=45, hjust=1),
-          axis.text.y = element_text(size=10),
-          strip.text = element_text(size=12),
+          axis.text.x = element_text(size=7,angle=45, hjust=1),
+          axis.text.y = element_text(size=7),
+          strip.text = element_text(size=7),
           legend.position="none"
-          )     
+    )     
+  
+  
+#   TransferPlot <- ggplot(data=subset(xferplot, Variable=="Ceiling"), 
+#                          aes(x=Month, y=Value)) + 
+#     geom_line(aes(group=Variable), color="#E27425") + 
+#     geom_bar(data=subset(xferplot, Variable!="Ceiling"), 
+#              aes(x=Month, y=Value, fill=School), 
+#              stat='identity',
+#              #fill="#439539", 
+#              width=.5) + 
+#     geom_text(data=subset(xferplot, Variable!="Ceiling"), 
+#               aes(x=Month, y=Value-.5, group=Variable, label=Value), 
+#               size=3,
+#               vjust=1) +
+#     facet_grid(Year~School, scale="free_y") +
+#     scale_fill_manual(values = c("purple",  #KCCP 
+#                                  "#439539", #KAMS
+#                                  "#60A2D7", #KCCP
+#                                  "#A7CFEE"  #KBCP
+#                                  )
+#                       ) + 
+#     theme_bw() + 
+#     theme(axis.title = element_blank(),
+#           axis.text.x = element_text(size=10,angle=45, hjust=1),
+#           axis.text.y = element_text(size=10),
+#           strip.text = element_text(size=12),
+#           legend.position="none"
+#           )     
+#   
+  
+  
   
   output$plotTransfers<-renderPlot(print(TransferPlot))
   

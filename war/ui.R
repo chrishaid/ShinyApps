@@ -92,7 +92,16 @@ shinyUI(
                    h3("Transfers"),
                    h4("Healthy Schools & Regions transfer totals"),
                    
-                   div(class="alert alert-info", p("Cumulative transfers of students enrolled on October 1st of each year and transferred prior to September 20th of the next year. Students who enrolled ", strong("after October 1st"), " and transferred during the school year are ", strong("not included"), " in in these tables and figures.")),
+                   div(class="alert alert-info", 
+                       p("Cumulative transfers of students enrolled on",
+                            "October 1st of each year and transferred prior to ",
+                            "September 20th of the next year. Students who enrolled ", 
+                            strong("after October 1st"), 
+                            " and transferred during the school year are ", 
+                            strong("not included"), " in in these tables and figures."),
+                       p("Lightly shaded area indicateds transfers by students who moved outside of Chicago.",
+                         "Dark areas indicate transfer by students for reasons other than moving outside of Chicago.")
+                       ),
                    tabsetPanel(
                      tabPanel(title="Visualization",
                               div(class="well", busyIndicator("Tracking students! Please be patient.", wait = 1000),

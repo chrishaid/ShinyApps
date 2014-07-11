@@ -9,6 +9,9 @@ library(knitr)
 library(RCurl)
 library(xtable)
 require(shinyIncubator)
+#require(plyr)
+require(dplyr)
+
 
 # source helper functions:
 message("Loading helper libraries")

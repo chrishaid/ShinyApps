@@ -3,7 +3,7 @@
 #table of Transfers by schoool 
 
 
-Xfersreasons<-data.table(EXITCODE=c(1:11,99),Reason=c("Dropped Out", 
+Xfersreasons<-data.table(EXITCODE=as.integer(c(1:11,99)),Reason=c("Dropped Out", 
                                                                     "Moved", 
                                                                     "Transport", 
                                                                     "Expelled", 
