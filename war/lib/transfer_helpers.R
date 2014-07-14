@@ -18,6 +18,9 @@ transferplot.data.prep <- function (transfers.data, enrolled.data) {
   require(lubridate)
   require(reshape2)
   
+  enrolled.data<-as.data.table(enrolled.data)
+  transfers.data<-as.data.table(transfers.data)
+  
   hsr_enrolled<-enrolled.data[,list(HSR_Enrolled=.N),by=SCHOOLID]
   hsr_enrolled[SCHOOLID==78102,  School:= "KAP"]
   hsr_enrolled[SCHOOLID==7810,   School:="KAMS"]

@@ -205,17 +205,33 @@ shinyServer(function(input, output, session) {
                       by=c("School", "Year")
   ) 
   
-  xferplot <- mutate(xferplot, Pct=round(Value/N*100))
+  xferplot <- mutate(xferplot, Pct=round(Value/N*100), Month=factor(Month, ordered=T))
+  xferplot.nm <- mutate(xferplot.nm,  Month=factor(Month, ordered=T))
   
-  todays_month<-as.integer(lubridate::month(today(), label = TRUE, abbr = TRUE))
+  todays_month<-lubridate::month(today(), label = TRUE, abbr = TRUE)
+  todays_month <- factor(as.character(todays_month), 
+                                      levels=c("Oct", 
+                                               "Nov", 
+                                               "Dec", 
+                                               "Jan", 
+                                               "Feb", 
+                                               "Mar",
+                                               "Apr", 
+                                               "May", 
+                                               "Jun", 
+                                               "Jul", 
+                                               "Aug", 
+                                               "Sep"),
+                                      ordered=T)
   
+                         
   #remove cumulative transfers passed this month
   xferplot2<-xferplot[!(xferplot$Year=="SY13-14" & 
-                          as.integer(xferplot$Month) >= todays_month & 
+                          xferplot$Month >= todays_month & 
                           xferplot$Variable=="Cumulative Transfers"),]
   
   xferplot2.nm<-xferplot.nm[!(xferplot.nm$Year=="SY13-14" & 
-                                as.integer(xferplot.nm$Month) >= todays_month & 
+                                xferplot.nm$Month >= todays_month & 
                                 xferplot.nm$Variable=="Cumulative Transfers"),]
   
   TransferPlot <- ggplot(data=subset(xferplot2, Variable=="Ceiling"), 
