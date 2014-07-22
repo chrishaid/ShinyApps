@@ -205,7 +205,7 @@ shinyServer(function(input, output, session) {
                       by=c("School", "Year")
   ) 
   
-  xferplot <- mutate(xferplot, Pct=round(Value/N*100), Month=factor(Month, ordered=T))
+  xferplot <- mutate(xferplot, Pct=round(Value/HSR_Enrolled*100), Month=factor(Month, ordered=T))
   xferplot.nm <- mutate(xferplot.nm,  Month=factor(Month, ordered=T))
   
   todays_month<-lubridate::month(today(), label = TRUE, abbr = TRUE)
