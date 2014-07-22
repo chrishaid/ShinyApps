@@ -101,8 +101,8 @@ shinyUI(
                             strong("not included"), " in in these tables and figures."),
                        p(strong("Darker colors"), " indicate the cumulative number of transfers for ",
                          "reasons other than moving. ", strong("Lighter colors"),  " indicate ",
-                         "the additional transfers for students who moved outside of ",
-                         "the city of Chicago. The ", strong("angled orange lines"), " indicate the rate ",
+                         "the additional transfers for students who moved. ",
+                         "The ", strong("angled orange lines"), " indicate the rate ",
                          "at which a 10 percent attrition rate accumulates; it is an indicator ", 
                          "if we are on track (below the line) or off track (above the line) in a given month.")
                        ),
