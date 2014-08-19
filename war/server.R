@@ -227,11 +227,11 @@ shinyServer(function(input, output, session) {
                          
   #remove cumulative transfers passed this month
   xferplot2<-xferplot[!(xferplot$Year=="SY13-14" & 
-                          xferplot$Month >= todays_month & 
+                          xferplot$Month > todays_month & 
                           xferplot$Variable=="Cumulative Transfers"),]
   
   xferplot2.nm<-xferplot.nm[!(xferplot.nm$Year=="SY13-14" & 
-                                xferplot.nm$Month >= todays_month & 
+                                xferplot.nm$Month > todays_month & 
                                 xferplot.nm$Variable=="Cumulative Transfers"),]
   
   TransferPlot <- ggplot(data=subset(xferplot2, Variable=="Ceiling"), 
