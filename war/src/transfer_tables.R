@@ -15,7 +15,7 @@ Xfersreasons<-data.table(EXITCODE=as.integer(c(1:11,99)),Reason=c("Dropped Out",
                                                                     "Don't Know", 
                                                                     "Xfer Other KIPP", 
                                                                     "DNA"))
-
+Xfers.HSR.1314[,EXITCODE:=as.integer(as.character(EXITCODE))]
 setkey(Xfers.HSR.1314, EXITCODE)
 setkey(Xfersreasons, EXITCODE)
 
