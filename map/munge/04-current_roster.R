@@ -14,16 +14,16 @@ current.roster<-filter(current.roster, Enroll_Status==0) %.%
   mutate(School=id_to_initials(SchoolID)) %.%
   group_by(School, Grade) 
 
-grade.summary<-summarise(current.roster, N=n())
+grade.summary<-dplyr::summarise(current.roster, N=n())
 
 
 current.term<-
-  filter(map.all, TermName=="Spring 2013-2014") %.% 
+  dplyr::filter(map.all, TermName=="Fall 2014-2015") %.% 
   mutate(School=abbrev(SchoolName, exceptions=list(old="KAPS", new="KAP"))
-         ) %.%
+         ) %>% 
   group_by(School, Grade, MeasurementScale)
 
-current.tests<-summarise(current.term, N.tested=n())
+current.tests<-dplyr::summarise(current.term, N.tested=n())
 
 test.summary<-left_join(grade.summary, current.tests, by=c("School", "Grade")) %.%
   mutate(Pct.tested=round(N.tested/N*100,1))
