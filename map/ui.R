@@ -2,7 +2,7 @@ library(shiny)
 require(shinysky)
 require(shinyIncubator)
 schools <- list("Region", "KAP", "KAMS", "KCCP", "KBCP")
-sys <- list("2013-2014", "2012-2013", "2011-2012")
+sys <- list("2014-2015","2013-2014", "2012-2013", "2011-2012")
 subjs <-  list("Mathematics", 
                "Reading",  
                "General Science"
@@ -131,7 +131,7 @@ shinyUI(fluidPage(
                       selectInput(inputId="selectSummSY", 
                                   label="Year(s) Selected:",
                                   choices=sys,
-                                  selected="2013-2014",
+                                  selected="2014-2015",
                                   #type="select",
                                   multiple=TRUE
                                   )
