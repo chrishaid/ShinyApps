@@ -14,7 +14,7 @@ pspw <- as.list(read.dcf("config/ps.dcf", all=TRUE)) #read DCF with configuratio
 pscon <- dbConnect(drvr,pspw$SERVER,pspw$UID,pspw$PWD) # connect to server
 
 # Construct SQL statement based today's date
-date.first  <- "2013-08-19" # first day of school year
+date.first  <- "2014-08-18" # first day of school year
 date.second <- lubridate::today() # 
 
 

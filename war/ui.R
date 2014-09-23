@@ -13,6 +13,9 @@ thisweek <- as.character(today())
 firstweek <- as.character(floor_date(DailyEnrollAttend[,min(WeekOfDate)]))
 
 
+restart_time<-file.info('restart.txt')$mtime
+
+update_time_stamp<-lubridate::stamp("Attendance data last updated on Tuesday, September 14, 2001 at 4:41 pm")(restart_time)
 
 
 shinyUI(
@@ -24,7 +27,7 @@ shinyUI(
       tags$script(src='static/js/dataTables.tableTools.js')
     ), 
     div(class="container-fluid",
-        h3(paste("as of", title.date)),
+        p(update_time_stamp),
         #busyIndicator("Counting students! Please be patient.", wait = 1000),
         tabsetPanel(
           tabPanel(title="Attendance",
