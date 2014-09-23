@@ -45,6 +45,12 @@ cols.selected <- c("N (both seasons)",
                    "% >= 75th Pctl S2"
 )
 
+restart_time<-file.info('restart.txt')$mtime
+
+update_time_stamp<-lubridate::stamp("NWEA MAP data last updated on Tuesday, September 14, 2001 at 4:41 pm")(restart_time)
+
+
+
 shinyUI(fluidPage(
   tags$head( 
     tags$link(href='static/css/shinyprogress.css', rel="stylesheet", type="text/css"), 
@@ -52,6 +58,9 @@ shinyUI(fluidPage(
     tags$script(src='static/js/jquery.dataTables.js'),
     tags$script(src='static/js/dataTables.tableTools.js')
     ), 
+  br(),
+  p(em(update_time_stamp)),
+  br(),
   tabsetPanel(
 #     tabPanel("Waterfalls",
 #              h3("Waterfall Charts", span(class="label label-default","New")),
