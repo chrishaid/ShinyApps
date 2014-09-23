@@ -27,7 +27,9 @@ shinyUI(
       tags$script(src='static/js/dataTables.tableTools.js')
     ), 
     div(class="container-fluid",
-        p(update_time_stamp),
+        br(),
+        p(em(update_time_stamp)),
+        br(),
         #busyIndicator("Counting students! Please be patient.", wait = 1000),
         tabsetPanel(
           tabPanel(title="Attendance",
