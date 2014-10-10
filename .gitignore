@@ -4,6 +4,8 @@
 *.Rdata
 #ignore DCF files 
 *.dcf
+# ignore excel files
+*.xls
 
 # Ignore log directories or files
 log/
