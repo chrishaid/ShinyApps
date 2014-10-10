@@ -9,40 +9,30 @@ prep_Att_Summary_Tables <- function(.data) {
   # Returns:
   #             x:      a data.table object identical to .data with the addition of the calculated columns 
   
-  stopifnot(is.data.table(.data), 
+  stopifnot(#is.data.table(.data), 
             c("Enrolled", "Absent", "Date") %in% names(.data)
             )
   
-  x<-copy(.data)
+  x<-.data %>%
+    mutate(Present=Enrolled-Absent, #quick daily facts
+           PctAbsent=Absent/Enrolled,
+           PctPresent=1-PctAbsent,
+           PctPresentGTE95=PctPresent>=.95,
+           WeekInYear=week(Date)
+           ) %>% 
+          group_by(School) %>% #Week of calculations and labels
+          mutate(WeekInSchoolYear=(floor_date(Date, unit="week") 
+                              - min(floor_date(Date, unit="week")))/dweeks(1)+1,
+           WeekOfDate=floor_date(Date, unit="week") + days(1),
+           WeekOfShortDateLabel=paste(
+             lubridate::month(WeekOfDate,label=TRUE, abbr=TRUE), 
+             lubridate::day(WeekOfDate), 
+             sep=" ")
+           ) %>% ungroup %>%
+    arrange(WeekInSchoolYear) %>% #resort
+    mutate(WeekOfShortDateLabel=factor(WeekInSchoolYear, labels=unique(WeekOfShortDateLabel))) #Short Week  Label
   
-  #Some quick daily stats
-  x[,Present:=Enrolled-Absent]
-  
-  x[,PctAbsent:=Absent/Enrolled]
-  
-  x[,PctPresent:=1-PctAbsent]
-  
-  x[,PctPresentGTE95:=PctPresent>=.95]
-  
-  #Week of calculations and labels
-  
-  x[,WeekInYear:=week(Date)]
-  
-  
-  x[,WeekInSchoolYear:=(floor_date(Date, unit="week") 
-                        - min(floor_date(Date, unit="week")))/dweeks(1)+1]
-  
-  
-  x[,WeekOfDate:=floor_date(Date, unit="week") + days(1) ]
-  
-  
-  #Short Week  Label
-  x[, WeekOfShortDateLabel:=paste(
-    lubridate::month(WeekOfDate,label=TRUE, abbr=TRUE), 
-    lubridate::day(WeekOfDate), 
-    sep=" ")]
-  x<-x[order(WeekInSchoolYear)]
-  x[, WeekOfShortDateLabel:=factor(WeekInSchoolYear, labels=unique(WeekOfShortDateLabel))]
-  
+  x
+    
   
 }

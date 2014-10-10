@@ -1,6 +1,8 @@
 # Script to retreive Attendance from KIPP Chicago's PowerSchool instance
 
 message("Loading required libraries . . . ")
+rm(list=ls())
+options( java.parameters = "-Xmx1500k" )
 library(RJDBC)
 library(lubridate)
 

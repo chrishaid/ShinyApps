@@ -17,9 +17,22 @@ impact <- read.csv(textConnection(googurl))
 # PowerSchool/Impact Summary Table ####
 message('Create PowerSchool/Impact summary table(s)')
 message('Summarizing PowerSchool data')
-ps.schools<- Attendance[,list(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)), by=list(School)][order(School)]
-ps.pm<-Attendance[School=="KAMS"|School=="KAP",list(School="KAP/KAMS",PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1))]
-ps.region<-Attendance[,list(School="Region",PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1))]
+ps.schools <- Attendance %>%
+  group_by(School) %>%
+  summarize(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)) %>%
+  arrange(School)
+  
+#ps.schools<- Attendance[,list(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)), by=list(School)][order(School)]
+ps.pm<-Attendance %>%
+  filter(School=="KAMS"|School=="KAP") %>%
+  summarize(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)) %>%
+  mutate(School="KACP")
+#ps.pm<-Attendance[School=="KAMS"|School=="KAP",list(School="KAP/KAMS",PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1))]
+ps.region<-Attendance %>%
+  summarize(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)) %>%
+  mutate(School="Region")
+  
+#ps.region<-Attendance[,list(School="Region",PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1))]
 
 ps.all<-rbind(ps.schools, ps.pm, ps.region)
 
@@ -46,7 +59,7 @@ shinyServer(function(input, output, session) {
                   )
   output$last6weeks <- renderText(as.character(lastXweeks))
   output$thisweek <- renderText(as.character(floor_date(today(),unit="week")+1))
-  output$firstweek <- renderText(as.character(floor_date(DailyEnrollAttend[,min(WeekOfDate)])))
+  output$firstweek <- renderText(as.character(floor_date(min(DailyEnrollAttend$WeekOfDate))))
                                    
                                    
   DailyEnrollAttend.plotdata<-DailyEnrollAttend
@@ -65,33 +78,35 @@ shinyServer(function(input, output, session) {
  
   
   getDAE <- reactive({
-   dt<-as.data.table(DailyEnrollAttend.plotdata.melt)
-   dt[Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2])]
-  }
-    )
+   dt<-DailyEnrollAttend.plotdata.melt %>%
+     filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2]))
+  })
   
   # can't plot a line with only one point (so need)
   
   ggAttend <- function(){
-    withProgress(session, min=1, max=10, {
-      setProgress(message = 'Tallying students-days',
-                  detail = 'There are alot! This may take a while...')
-      
-      setProgress(value = 3, message="Getting data")
-      
-    DAE.dt <- getDAE()
     
-    setProgress(value = 5, message="Building visualization")
-  if(DAE.dt[max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel), 
-            length(unique(Date))]==1){
-    p <- ggplot(DAE.dt[Date<max(Date),], aes(x=Day, y=value))
-  }
-  else p <- ggplot(DAE.dt, aes(x=Day, y=value))
+      
+    DAE <- getDAE()
+    
+    # Determine if there is only one day worth of data
+    DAE_max_days<- DAE %>%
+      filter(max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel)
+             )
+    
+    only_one_day <- length(unique(DAE_max_days$Date))==1
+   
+    if(only_one_day){
+      p <- ggplot(filter(DAE, Date<max(Date)), 
+                  aes(x=Day, y=value))
+      } else {
+        p <- ggplot(DAE, aes(x=Day, y=value))
+      }
   p <- p + 
     geom_step(direction="hv", 
               aes(color=variable),
               size=1) + 
-    geom_point(data=DAE.dt[variable=="Attended"], 
+    geom_point(data=filter(DAE, variable=="Attended"), 
                color="black",
                size=3) +
     scale_x_continuous(breaks = c(2,3,4,5,6), labels=c("M","T","W","R","F")) + #Change numberd week days to lettered
@@ -108,24 +123,25 @@ shinyServer(function(input, output, session) {
           axis.title.y=element_text(size=10),
           legend.text=element_text(size=12)
     )
-  setProgress(value = 7, message="Drawing visualization", 
-              detail="Be done in a jiffy!")
-  print(p)
-    })
+  
+  p
+  
   }
   output$plotAttendEnroll <- renderPlot(ggAttend())
   
   # Daily Attend Table ####
-  DailyEnrollAttend.dt <- copy(DailyEnrollAttend[,list(
-                                              School,
-                                              Date,
-                                              Enrolled,
-                                              Present,
-                                              Absent,
-                                              PctAtt=round(PctPresent*100,1))]
-                               )
-  setnames(DailyEnrollAttend.dt, "PctAtt", "% Attending")
-  output$daily_attend <- renderDataTable({DailyEnrollAttend.dt[School %in% input$schools]
+  DailyEnrollAttend.dt <- DailyEnrollAttend %>%
+    mutate(PctAtt=round(PctPresent*100,1)) %>%
+    select(School,
+           Date,
+           Enrolled,
+           Present,
+           Absent,
+           "% Attending" = PctAtt)
+                               
+  #setnames(DailyEnrollAttend.dt, "PctAtt", "% Attending")
+  output$daily_attend <- renderDataTable({filter(DailyEnrollAttend.dt, 
+                                                 School %in% input$schools)
                                           }, 
                                          options = list(bSortClasses = TRUE,
                                                         aLengthMenu = list(c(5,25, 50, 100, -1), 
@@ -152,13 +168,12 @@ shinyServer(function(input, output, session) {
                                                   output=TRUE
                                            )
                                      )
-  output$StudentAtt<-renderDataTable({AttByStudentBySchool[,c("School", 
-                                                               "Grade", 
-                                                               "Student", 
-                                                               "ADA", 
-                                                               "ADA (prior month)", 
-                                                               "Absences"), 
-                                                            with=FALSE]
+  output$StudentAtt<-renderDataTable({select(AttByStudentBySchool,
+                                             School, 
+                                             Grade, 
+                                             Student, 
+                                             starts_with("ADA"), 
+                                             Absences)
                                       },
                                      options = list(bSortClasses = TRUE,
                                                     aLengthMenu = list(c(10,20, 50, -1), 
@@ -181,24 +196,31 @@ shinyServer(function(input, output, session) {
                     mutate(Year="SY12-13"), 
                   group_by(Enrolled.131001, SCHOOLID) %>% 
                     summarise(N=n()) %>% 
-                    mutate(Year="SY13-14")
-  )
+                    mutate(Year="SY13-14"),
+                  group_by(Enrolled.141001, SCHOOLID) %>% 
+                    summarise(N=n()) %>% 
+                    mutate(Year="SY14-15")  
+  ) %>% mutate(School=school_abbrev(SCHOOLID),
+               School=factor(School, 
+                             levels=c("KAP", "KAMS", "KCCP", "KBCP")
+                             )
+               )
   
-  enrolled$School<-mapply(function(x){ switch(as.character(x),
-                                              "7810" = "KAMS",
-                                              "78102" = "KAP",
-                                              "400146"= "KCCP",
-                                              "400163" = "KBCP"
-  )
-  },
-  enrolled$SCHOOLID
-  )
+#   enrolled$School<-mapply(function(x){ switch(as.character(x),
+#                                               "7810" = "KAMS",
+#                                               "78102" = "KAP",
+#                                               "400146"= "KCCP",
+#                                               "400163" = "KBCP"
+#   )
+#   },
+#   enrolled$SCHOOLID
+#   )
   
-  enrolled<-mutate(enrolled, 
-                   School=factor(School, 
-                                 levels=c("KAP", "KAMS", "KCCP", "KBCP")
-                   )
-  )
+#   enrolled<-mutate(enrolled, 
+#                    School=factor(School, 
+#                                  levels=c("KAP", "KAMS", "KCCP", "KBCP")
+#                    )
+#   )
   
   xferplot<-left_join(xferplot, 
                       select(enrolled, -SCHOOLID), 
@@ -226,13 +248,19 @@ shinyServer(function(input, output, session) {
   
                          
   #remove cumulative transfers passed this month
-  xferplot2<-xferplot[!(xferplot$Year=="SY13-14" & 
+  xferplot2<-filter(xferplot,
+                    !(xferplot$Year=="SY13-14" & 
                           xferplot$Month > todays_month & 
-                          xferplot$Variable=="Cumulative Transfers"),]
+                          xferplot$Variable=="Cumulative Transfers"
+                      )
+                    )
   
-  xferplot2.nm<-xferplot.nm[!(xferplot.nm$Year=="SY13-14" & 
+  xferplot2.nm<-filter(xferplot.nm, 
+                       !(xferplot.nm$Year=="SY13-14" & 
                                 xferplot.nm$Month > todays_month & 
-                                xferplot.nm$Variable=="Cumulative Transfers"),]
+                                xferplot.nm$Variable=="Cumulative Transfers"
+                         )
+                       )
   
   TransferPlot <- ggplot(data=subset(xferplot2, Variable=="Ceiling"), 
          aes(x=Month, y=Value)) + 

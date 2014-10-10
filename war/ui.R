@@ -10,7 +10,7 @@ lastXweeks<-ymd(as.character(floor_date(today() -weeks(6),
                                         unit="week")+1))
 last6weeks <- as.character(lastXweeks)
 thisweek <- as.character(today())
-firstweek <- as.character(floor_date(DailyEnrollAttend[,min(WeekOfDate)]))
+firstweek <- as.character(floor_date(min(DailyEnrollAttend$WeekOfDate)))
 
 
 restart_time<-file.info('restart.txt')$mtime
@@ -55,14 +55,13 @@ shinyUI(
                                                         min=firstweek,
                                                         max=thisweek
                                                         ),
-                                         progressInit(),
                                          plotOutput("plotAttendEnroll",
                                                     height="600px")
                                          ),
                                 tabPanel(title="Table",
                                          selectInput('schools', 
                                                             'Select School:', 
-                                                            DailyEnrollAttend[,unique(School)],
+                                                            unique(DailyEnrollAttend$School),
                                                             selected = "KAMS", 
                                                             multiple=TRUE),
                                          div(class="table-condensed", 

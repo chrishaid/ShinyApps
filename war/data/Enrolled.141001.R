@@ -1,4 +1,4 @@
-#all students enrolled on October 1 2013
+#all students enrolled on October 1 2014
 message("Loading required libraries . . . ")
 library(RJDBC)
 library(lubridate)
@@ -13,8 +13,8 @@ pspw <- as.list(read.dcf("config/ps.dcf", all=TRUE)) #read DCF with configuratio
 pscon <- dbConnect(drvr,pspw$SERVER,pspw$UID,pspw$PWD) # connect to server
 
 
-message('Getting 10/01/13 attendance')
-Enrolled.131001<-dbGetQuery(pscon, "SELECT
+message('Getting 10/01/14 attendance')
+Enrolled.141001<-dbGetQuery(pscon, "SELECT
 m.SchoolID,
                             s.student_number as StudentID,
                             s.first_name,
@@ -33,9 +33,9 @@ m.SchoolID,
                             FROM PS_Membership_Defaults m
                             JOIN STUDENTS s
                             ON m.studentid = s.id
-                            WHERE m.calendardate = '01-OCT-13'
+                            WHERE m.calendardate = '01-OCT-14'
                             ORDER BY schoolid, grade_level
                             ")
 
-message("Writing attendance data to data/Enrolled.131001.csv")
-write.csv(Enrolled.131001,file='data/Enrolled.131001.csv')
+message("Writing attendance data to data/Enrolled.141001.csv")
+write.csv(Enrolled.141001,file='data/Enrolled.141001.csv')

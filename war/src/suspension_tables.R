@@ -1,6 +1,6 @@
 #### Suspensions Tables ####
 
-Suspensions<-copy(Attendance[AttCode=='S'])
+Suspensions<-as.data.table(filter(Attendance,AttCode=='S'))
 Suspensions<-prep_Att_Summary_Tables(Suspensions)
 
 #### Daily Suspensions By Grade ####
