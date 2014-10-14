@@ -45,15 +45,11 @@ AttRateByWeekBySchool.table<-cast(AttRateByWeekBySchool,
                                   WeekOfShortDateLabel ~ School, 
                                   value="AttRate")
 
-AttRateYTDBySchool<-reshape(AttRateYTDBySchool, 
-                            idvar="WeekOfShortLabel",
-                            timevar="School",
-                            direction="wide") %>%
-  select(WeekOfShortDateLabel=WeekOfShortLabel,
-         KAP=AttRate.KAP,
-         KAMS=AttRate.KAMS,
-         KCCP=AttRate.KCCP,
-         KBCP=AttRate.KBCP)
+
+AttRateYTDBySchool<-cast(AttRateYTDBySchool, 
+                         WeekOfShortLabel ~ School, 
+                         value="AttRate") %>%
+  rename(WeekOfShortDateLabel=WeekOfShortLabel)
 #setnames(AttRateYTDBySchool, c("WeekOfShortDateLabel", "KAP", "KAMS", "KCCP", "KBCP"))
 
 
