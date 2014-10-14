@@ -2,18 +2,22 @@
 
 message("Loading required libraries . . . ")
 rm(list=ls())
-options( java.parameters = "-Xmx1500k" )
+#options( java.parameters = "-Xmx3G" )
+require(ETLUtils)
 library(RJDBC)
 library(lubridate)
 
 # Connect to server using JDBC Connection (note: requires a VPN connection to be open to psshostingvpn.poowerschool.com)
 
 message("Logging into server . . . ")
-drvr <- JDBC("oracle.jdbc.driver.OracleDriver", "/var//lib/jdbc//ojdbc6.jar","") # define driver
+
+
+drvr <- JDBC("oracle.jdbc.driver.OracleDriver", "/var/lib/jdbc/ojdbc6.jar","") # define driver
+drvr <- JDBC(driverClass = "oracle.jdbc.driver.OracleDriver",
+             classPath = "/var/lib/jdbc/ojdbc7.jar",identifier.quote = "") # define driver
+
 
 pspw <- as.list(read.dcf("config/ps.dcf", all=TRUE)) #read DCF with configuration settings
-
-pscon <- dbConnect(drvr,pspw$SERVER,pspw$UID,pspw$PWD) # connect to server
 
 # Construct SQL statement based today's date
 date.first  <- "2014-08-18" # first day of school year
@@ -78,11 +82,30 @@ sql.statement<-paste("SELECT
 #Execture qurey and return to data frame   
 
 message("Getting attendance data from PowerSchool . . . ")
-Attendance<-dbGetQuery(pscon, sql.statement)
+
+
+
+Attendance <- read.jdbc.ffdf(query=sql.statement,
+                             dbConnect.args = list( 
+                               drv=drvr,
+                               url=pspw$SERVER,
+                               user=pspw$UID,
+                               password=pspw$PWD
+                             ),
+                             first.rows=100,
+                             next.rows=1000,
+                             VERBOSE=TRUE
+)
+
+
+
+
+
 
 message("Writing attendance data to data/Attendance.csv")
 write.csv(Attendance, file="data/Attendance.csv", row.names=FALSE)
-
+message("Deleting Attendance object to clear memory")
+rm(Attendance)
 
 
 
