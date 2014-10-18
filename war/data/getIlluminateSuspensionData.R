@@ -5,10 +5,12 @@ require(data.table)
 require(lubridate)
 #connect to illuminate database ####
 message("Connect to Illuminate database")
-ill.src<-src_postgres(dbname="kippchicago", 
-                  host="dbm03.illuminateed.com", 
-                  user="kippchicago", 
-                  password="1UjhMMgE")
+ill_config<-as.list(read.dcf('../config/ill.dcf',all = TRUE))
+ill.src<-src_postgres(dbname=ill_config$dbname, 
+                  host=ill_config$host, 
+                  port=ill_config$port,
+                  user=ill_config$user, 
+                  password=ill_config$pwd)
 
 # get all Illuminate tables ####
 message("Get Illuminate tables")
@@ -60,17 +62,17 @@ message("Munging Illuminate Tables")
 
 # First, get grades into students table via terms
 
-students_all<-select(ill.students, student_id, local_student_id, first_name, last_name) %.% 
-  mutate(stu_first_name=first_name, stu_last_name=last_name) %.%
+students_all<-select(ill.students, student_id, local_student_id, first_name, last_name) %>% 
+  mutate(stu_first_name=first_name, stu_last_name=last_name) %>%
   select(student_id, local_student_id, stu_first_name, stu_last_name)
 
-session_terms<-filter(ill.sessions, academic_year==2014) %.% 
-  left_join(ill.terms, by="session_id") %.%
-  inner_join(ill.student_term_aff, by="term_id") %.%
+session_terms<-filter(ill.sessions, academic_year==2015) %>% 
+  left_join(ill.terms, by="session_id") %>%
+  inner_join(ill.student_term_aff, by="term_id") %>%
   left_join(ill.grade_levels, by="grade_level_id")
 
-students<-left_join(students_all, session_terms, by="student_id") %.%
-  mutate(school_id=site_id) %.%
+students<-left_join(students_all, session_terms, by="student_id") %>%
+  mutate(school_id=site_id) %>%
   select(student_id, local_student_id, stu_first_name, stu_last_name,
          short_name, school_id)
 
@@ -96,7 +98,7 @@ discipline_events <- select(ill.student_discipline,
                      student_id,
                      site_id,
                      notes
-                     ) %.% left_join(students, by="student_id")
+                     ) %>% left_join(students, by="student_id")
 
 
 discipline_consequence<-left_join(ill.student_discipline_consquence, 
@@ -105,9 +107,9 @@ discipline_consequence<-left_join(ill.student_discipline_consquence,
 
 discipline<-left_join(discipline_events,
                       discipline_consequence, 
-                      by="discipline_id") %.% 
+                      by="discipline_id") %>% 
   left_join(ill.codes_discipline_short_descriptons, 
-            by="short_description_id") %.%
+            by="short_description_id") %>%
   left_join(ill.codes_discipline_location, 
             by="location_id")
 
@@ -116,10 +118,10 @@ discipline<-left_join(discipline_events,
 users<-mutate(ill.users, 
        ref_first_name=first_name, 
        ref_last_name=last_name,
-       referred_by=user_id) %.%
+       referred_by=user_id) %>%
   select(ref_first_name, ref_last_name, referred_by)
 
-disc<-left_join(discipline, users, by="referred_by") %.%
+disc<-left_join(discipline, users, by="referred_by") %>%
   select(site_id, 
          school_id,
          short_name, 

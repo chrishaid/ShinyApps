@@ -56,8 +56,10 @@ shinyUI(
                                                         max=thisweek
                                                         ),
                                          plotOutput("plotAttendEnroll",
-                                                    height="600px")
+                                                    height="600px"),
+                                         dataTableOutput("dtDEA")
                                          ),
+                                        
                                 tabPanel(title="Table",
                                          selectInput('schools', 
                                                             'Select School:', 
@@ -112,11 +114,11 @@ shinyUI(
                        ),
                    tabsetPanel(
                      tabPanel(title="Visualization",
-                              div(class="well", busyIndicator("Tracking students! Please be patient.", wait = 1000),
+                              div(class="well",
                               plotOutput("plotTransfers"))
                      ),
                      tabPanel(title="Summary Table",
-                              dataTableOutput("xfersSummary")
+                              htmlOutput("xfersSummary")
                      ),
                      tabPanel(title="Student Details",
                               dataTableOutput("xfersStudents")

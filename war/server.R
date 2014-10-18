@@ -7,7 +7,7 @@ addResourcePath('static', '/var/www/')
 ####  Sessionwide Data ####
 # Illuminate suspension
 
-load('data/discipline.Rdata')
+#load('data/discipline.Rdata')
 
 # CPS Impact ####
 message('Get IMPACT data from google spreadsheet')
@@ -17,57 +17,74 @@ impact <- read.csv(textConnection(googurl))
 # PowerSchool/Impact Summary Table ####
 message('Create PowerSchool/Impact summary table(s)')
 message('Summarizing PowerSchool data')
+message(' . . . by school')
 ps.schools <- Attendance %>%
   group_by(School) %>%
-  summarize(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)) %>%
-  arrange(School)
+  dplyr::summarize(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)) %>%
+  dplyr::arrange(School)
   
 #ps.schools<- Attendance[,list(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)), by=list(School)][order(School)]
+message(' . . . by combining Ascend campuses')
 ps.pm<-Attendance %>%
   filter(School=="KAMS"|School=="KAP") %>%
   summarize(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)) %>%
   mutate(School="KACP")
 #ps.pm<-Attendance[School=="KAMS"|School=="KAP",list(School="KAP/KAMS",PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1))]
+
+message(' . . . by rolling up the region')
 ps.region<-Attendance %>%
   summarize(PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1)) %>%
   mutate(School="Region")
   
 #ps.region<-Attendance[,list(School="Region",PowerSchool=round((1-(sum(Absent)/sum(Enrolled)))*100,1))]
-
+message("Combining School, Ascend-only, and regional data")
 ps.all<-rbind(ps.schools, ps.pm, ps.region)
 
 message("Appending Impact Data")
 impact<-cbind(ps.all, round(impact[2],1))
 
+message("Calculating diff between impact data and PS data")
 impact$Difference<-impact$Impact - impact$PowerSchool
 
-
+message("Staring shiny server portion of code")
 #### Shiny Server output code ####
 shinyServer(function(input, output, session) {
   #Impact and PowerSchool Comparison
+  message('Render impact table')
+  
   output$impact <- renderPrint(kable(impact, 
                                       format='html', 
                                       table.attr='class="table table-responsive table-hover table-condensed table-striped shiny-html-output"', 
                                       output=TRUE
                                       )
                                 )
+  message('Begin building Daily Enrollement and Attendance plot')
+  
   # Daily Enrollment & Attendance Plot ####
   lastXweeks<-ymd(as.character(floor_date(today() -weeks(6), 
                                           unit="week"
                                           )+1
                                )
                   )
+  
+  message("Render date text")
   output$last6weeks <- renderText(as.character(lastXweeks))
   output$thisweek <- renderText(as.character(floor_date(today(),unit="week")+1))
   output$firstweek <- renderText(as.character(floor_date(min(DailyEnrollAttend$WeekOfDate))))
                                    
-                                   
-  DailyEnrollAttend.plotdata<-DailyEnrollAttend
-  DailyEnrollAttend.plotdata$Day <- wday(DailyEnrollAttend.plotdata$Date)
-  DailyEnrollAttend.plotdata$Enrolled96Pct <- DailyEnrollAttend.plotdata$Enrolled*.96
+  message("Munge DailyEnrollAttend.plotdata")                               
+  DailyEnrollAttend.plotdata<-DailyEnrollAttend %>%
+    mutate(Day=wday(Date),
+           Enrolled96Pct=Enrolled*.96
+           ) %>%
+    as.data.frame
+  #DailyEnrollAttend.plotdata$Day <- wday(DailyEnrollAttend.plotdata$Date)
+  #DailyEnrollAttend.plotdata$Enrolled96Pct <- DailyEnrollAttend.plotdata$Enrolled*.96
   DailyEnrollAttend.plotdata.melt<-melt(DailyEnrollAttend.plotdata, 
                                         id=c("Date", "Day", "School", "WeekOfShortDateLabel"), 
-                                        measure.vars=c("Enrolled", "Enrolled96Pct", "Present"))
+                                      measure.vars=c("Enrolled", "Enrolled96Pct", "Present"))
+  
+  message("Munge DailyEnrollAttend.plotdata: factor lables")                               
   
   DailyEnrollAttend.plotdata.melt$variable<-factor(DailyEnrollAttend.plotdata.melt$variable, 
                                                    labels=c("Enrolled", 
@@ -84,10 +101,44 @@ shinyServer(function(input, output, session) {
   
   # can't plot a line with only one point (so need)
   
-  ggAttend <- function(){
+  message("Build DAE plot")
+  ggAttend <- reactive({
+    withProgress(message = 'Graphing attendance  & enrollment', value = 0, {
+      # Number of times we'll go through the loop
+      #incProgress(.1, detail = "Counting Students") 
     
-      
+    message("get DAE")
+    incProgress(.3, detail = "Getting data")
     DAE <- getDAE()
+    
+    incProgress(.4, detail = "Calculting ADA")
+    
+    DAE.ytd.plot<-DAE %>% as.data.frame %>%
+      cast(Date + Day + School + WeekOfShortDateLabel ~ variable) %>% 
+      as.data.frame %>%
+      group_by(School) %>% 
+      dplyr::mutate(Cum_Enrolled=order_by(Date, cumsum(Enrolled)), 
+                    Cum_Attended=order_by(Date, cumsum(Attended)),
+                    YTD_ADA = round(Cum_Attended/Cum_Enrolled*100,1)
+      ) %>%
+      arrange(School, Date) 
+    
+    DAE.weekly.ada <- DAE.ytd.plot %>%
+      group_by(School, WeekOfShortDateLabel) %>%
+      dplyr::summarise(Weekly_ADA=round(sum(Attended)/sum(Enrolled)*100,1),
+                y_pos=min(Attended)
+      )
+    
+    DAE.weekly.ytd.plot<- DAE.ytd.plot %>%
+      group_by(School, WeekOfShortDateLabel) %>%
+      filter(Day==max(Day)) %>%
+      select(School, WeekOfShortDateLabel, Day, YTD_ADA) %>%
+      inner_join(DAE.weekly.ada, by=c("School", "WeekOfShortDateLabel")) %>%
+      group_by(School) %>%
+      dplyr::mutate(y_pos=min(y_pos),
+             x_pos=max(Day)
+      )
+    
     
     # Determine if there is only one day worth of data
     DAE_max_days<- DAE %>%
@@ -102,6 +153,7 @@ shinyServer(function(input, output, session) {
       } else {
         p <- ggplot(DAE, aes(x=Day, y=value))
       }
+    incProgress(.6, detail = "Constructing graph")
   p <- p + 
     geom_step(direction="hv", 
               aes(color=variable),
@@ -109,9 +161,26 @@ shinyServer(function(input, output, session) {
     geom_point(data=filter(DAE, variable=="Attended"), 
                color="black",
                size=3) +
+     geom_text(data=DAE.weekly.ytd.plot,
+               aes(x=x_pos, 
+                   y=y_pos, 
+                   label=paste0("YTD ADA: ",
+                                YTD_ADA,
+                                "\nWeekly ADA: ",
+                                Weekly_ADA),
+                   alpha=Weekly_ADA>=96
+                   ),
+               color="purple",
+               #alpha=.7,
+              hjust=1,
+              vjust=0,
+              size=4,
+              inherits.aes=FALSE
+               ) +
     scale_x_continuous(breaks = c(2,3,4,5,6), labels=c("M","T","W","R","F")) + #Change numberd week days to lettered
     scale_y_continuous("# of Students") + 
     scale_colour_manual("", values=c("#8D8685", "#439539", "black")) +
+    scale_alpha_manual("Weekly ADA >= 96%", values=c(.4,1)) +
     facet_grid(School~WeekOfShortDateLabel, scales="free_y") +
     theme_bw() + 
     theme(legend.position="bottom", 
@@ -123,13 +192,22 @@ shinyServer(function(input, output, session) {
           axis.title.y=element_text(size=10),
           legend.text=element_text(size=12)
     )
+  incProgress(1, detail = "Drawing graph")
+    })
+  x<-list(p=p,
+       data=DAE.weekly.ytd.plot)
+  x
+  })
   
-  p
-  
-  }
-  output$plotAttendEnroll <- renderPlot(ggAttend())
-  
+  message("Render DEA plot")
+  output$plotAttendEnroll <- renderPlot({
+      ggAttend()$p
+    })
+  output$dtDEA <- renderDataTable({
+    ggAttend()$data
+  }) 
   # Daily Attend Table ####
+  message('Munge  daily enrollement/attendence data table')
   DailyEnrollAttend.dt <- DailyEnrollAttend %>%
     mutate(PctAtt=round(PctPresent*100,1)) %>%
     select(School,
@@ -138,8 +216,10 @@ shinyServer(function(input, output, session) {
            Present,
            Absent,
            "% Attending" = PctAtt)
-                               
+         
+  
   #setnames(DailyEnrollAttend.dt, "PctAtt", "% Attending")
+  message('Render  daily enrollement/attendence data table')
   output$daily_attend <- renderDataTable({filter(DailyEnrollAttend.dt, 
                                                  School %in% input$schools)
                                           }, 
@@ -189,21 +269,24 @@ shinyServer(function(input, output, session) {
   
   
   #### Student Transfers ####
+  message("Student Transfers section")
   source('src//transfer_tables.R', local=TRUE)
   
-  enrolled<-rbind(group_by(Enrolled.121003, SCHOOLID) %>% 
-                    summarise(N=n()) %>% 
+  message("Binding Enrolled students tables")
+  enrolled<-rbind(group_by(Enrolled.121003, SCHOOLID) %>%
+                    dplyr::summarise(N=n()) %>% 
                     mutate(Year="SY12-13"), 
                   group_by(Enrolled.131001, SCHOOLID) %>% 
-                    summarise(N=n()) %>% 
+                    dplyr::summarise(N=n()) %>% 
                     mutate(Year="SY13-14"),
                   group_by(Enrolled.141001, SCHOOLID) %>% 
-                    summarise(N=n()) %>% 
+                    dplyr::summarise(N=n()) %>% 
                     mutate(Year="SY14-15")  
   ) %>% mutate(School=school_abbrev(SCHOOLID),
                School=factor(School, 
                              levels=c("KAP", "KAMS", "KCCP", "KBCP")
-                             )
+                             ),
+               Year=as.factor(Year)
                )
   
 #   enrolled$School<-mapply(function(x){ switch(as.character(x),
@@ -222,13 +305,14 @@ shinyServer(function(input, output, session) {
 #                    )
 #   )
   
+message("Combining transerfed and enrolled tables into xferplot")
   xferplot<-left_join(xferplot, 
                       select(enrolled, -SCHOOLID), 
                       by=c("School", "Year")
-  ) 
+  ) %>% mutate(Year=as.factor(Year))
   
   xferplot <- mutate(xferplot, Pct=round(Value/HSR_Enrolled*100), Month=factor(Month, ordered=T))
-  xferplot.nm <- mutate(xferplot.nm,  Month=factor(Month, ordered=T))
+  xferplot.nm <- mutate(xferplot.nm,  Month=factor(Month, ordered=T), Year=as.factor(Year))
   
   todays_month<-lubridate::month(today(), label = TRUE, abbr = TRUE)
   todays_month <- factor(as.character(todays_month), 
@@ -248,43 +332,47 @@ shinyServer(function(input, output, session) {
   
                          
   #remove cumulative transfers passed this month
-  xferplot2<-filter(xferplot,
-                    !(xferplot$Year=="SY13-14" & 
-                          xferplot$Month > todays_month & 
-                          xferplot$Variable=="Cumulative Transfers"
-                      )
-                    )
+  message("Remove cumulative transfers passed this month")
+  #xferplot2<-filter(xferplot,
+  #                  !(Year=="SY14-15" & 
+  #                        Month > todays_month & 
+  #                        Variable=="Cumulative Transfers"
+  #                    )
+  #                  )
   
-  xferplot2.nm<-filter(xferplot.nm, 
-                       !(xferplot.nm$Year=="SY13-14" & 
-                                xferplot.nm$Month > todays_month & 
-                                xferplot.nm$Variable=="Cumulative Transfers"
-                         )
-                       )
-  
-  TransferPlot <- ggplot(data=subset(xferplot2, Variable=="Ceiling"), 
+  #xferplot2.nm<-filter(xferplot.nm, 
+  #                     !(Year=="SY14-15" & 
+  #                        Month > todays_month & 
+  #                        Variable=="Cumulative Transfers"
+  #                       )
+  #                     )
+
+xferplot2<-filter(xferplot, !(is.na(Value) & Year=="SY14-15"))
+xferplot2.nm<-filter(xferplot.nm,  !(is.na(Value) & Year=="SY14-15"))
+  message("Creating Transfer plot")
+  TransferPlot <- ggplot(data=filter(xferplot2, Variable=="Ceiling"), 
          aes(x=Month, y=Value)) + 
-    geom_area(data=subset(xferplot2, Variable!="Ceiling"), 
+    geom_area(data=filter(xferplot2, Variable!="Ceiling"), 
               aes(x=Month, y=CumVal, fill=School, group=School), 
               stat='identity',
               #fill="#439539", 
               width=.5, 
               alpha=.4) + 
-    geom_area(data=subset(xferplot2.nm, Variable!="Ceiling"), 
+    geom_area(data=filter(xferplot2.nm, Variable!="Ceiling"), 
               aes(x=Month, y=CumVal, fill=School, group=School), 
               stat='identity',
               #fill="#439539", 
               width=.5, 
               alpha=1) + 
     geom_line(aes(group=Variable), color="#E27425") + 
-    geom_text(data=subset(xferplot2, Variable!="Ceiling"), 
+    geom_text(data=filter(xferplot2, Variable!="Ceiling"), 
               aes(x=Month, 
                   y=Value, 
                   group=Variable, 
                   label=paste0(Value,"\n(",Pct,"%)")), 
               size=3,
               vjust=0) +
-    geom_text(data=subset(xferplot2.nm, Variable!="Ceiling"), 
+    geom_text(data=filter(xferplot2.nm, Variable!="Ceiling"), 
               aes(x=Month, 
                   y=Value, 
                   group=Variable, 
@@ -338,33 +426,34 @@ shinyServer(function(input, output, session) {
   
   output$plotTransfers<-renderPlot(print(TransferPlot))
   
-  output$xfersSummary <- renderDataTable({Xfer.table},
-                                         options = list(bSortClasses = TRUE,
-                                                        aLengthMenu = list(c(10,20, 50, -1), 
-                                                                           list(10,20,50,'All')
-                                                        ), 
-                                                        iDisplayLength = 10,
-                                                        "sDom"='T<"clear">lfrtip',
-                                                        "oTableTools"=list("sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
-                                                                           )
-                                                        )
-                                         )
+  output$xfersSummary <- renderPrint(kable(Xfer.table,
+                                     format='html', 
+                                     table.attr='class="table table-responsive table-hover table-condensed table-striped shiny-html-output"', 
+                                     output=TRUE)
+  )
+  #renderDataTable(Xfer.table) #,
+                                         #options = list(#ordering = TRUE,
+                                          #              lengthMenu = list(c(10,20, 50, -1), 
+                                           #                                list(10,20,50,'All')), 
+                                            #           pageLength = 10
+                                             #           )
+  #)                                         
   
-  output$xfersStudents <- renderDataTable({Xfer.students.table},
-                                          options = list(bSortClasses = TRUE,
-                                                         aLengthMenu = list(c(10,20, 50, -1), 
-                                                                            list(10,20,50,'All')
+  output$xfersStudents <- renderDataTable(Xfer.students.table,
+                                          options = list(ordering = TRUE,
+                                                         lengthMenu = list(c(10,20, 50, -1), 
+                                                                           list(10,20,50,'All')
                                                          ), 
-                                                         iDisplayLength = 10,
-                                                         "sDom"='T<"clear">lfrtip',
-                                                         "oTableTools"=list("sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
-                                                                            )
+                                                         pageLength = 10,
+                                                         "dom"='T<"clear">lfrtip',
+                                                         "tableTools"=list("sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                                                                           )
                                                          )
                                           )
   
   ### Suspensions ####
-  
-  output$suspensions<-renderDataTable({disc.dt},
+ load("data/discipline.Rdata")
+ output$suspensions<-renderDataTable({disc.dt},
                                       options = list(bSortClasses = TRUE,
                                                      aLengthMenu = list(c(10,20, 50, -1), 
                                                                         list(10,20,50,'All')

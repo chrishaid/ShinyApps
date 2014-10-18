@@ -49,7 +49,7 @@ AttRateByWeekBySchool.table<-cast(AttRateByWeekBySchool,
 AttRateYTDBySchool<-cast(AttRateYTDBySchool, 
                          WeekOfShortLabel ~ School, 
                          value="AttRate") %>%
-  rename(WeekOfShortDateLabel=WeekOfShortLabel)
+  dplyr::rename(WeekOfShortDateLabel=WeekOfShortLabel)
 #setnames(AttRateYTDBySchool, c("WeekOfShortDateLabel", "KAP", "KAMS", "KCCP", "KBCP"))
 
 

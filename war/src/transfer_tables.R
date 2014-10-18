@@ -19,22 +19,23 @@ Xfer.students.table <- Xfers.HSR.1415 %>%
   mutate(EXITCODE=as.integer(as.character(EXITCODE))) %>%
   left_join(Xfersreasons, by="EXITCODE")
 
+message("Summarizing Xfer.table")
 Xfer.table <- Xfer.students.table %>% 
   mutate(School=school_abbrev(SCHOOLID)) %>%
   group_by(Reason, School) %>%
-  summarize(N=n()) 
+  dplyr::summarize(N=n()) 
 
   
-
+message("Casting Xfer.table")
 # Create summary table
-Xfer.table<-cast(Xfer.table, 
+Xfer.table<-cast(as.data.frame(Xfer.table), 
                  Reason~School, 
                  margins=TRUE, 
                  fun.aggregate=sum)
 
 #Xfer.table<-cast(ddply(Xfer.students.table, .(Reason, SCHOOLID), function(df)c(N=nrow(df))), Reason~SCHOOLID, margins=TRUE, fun.aggregate=sum)
 # renaming some variable
-
+message("Changin Xfer.table column names")
 names(Xfer.table)[names(Xfer.table)=="Reason"]<-"Transfer Reason"
 names(Xfer.table)[names(Xfer.table)=="(all)"]<-"Region"
 #names(Xfer.table)<-c("Transfer Reason", "KAMS", "KAP", "KCCP", "KBCP", "Region")
@@ -43,12 +44,14 @@ levels(Xfer.table[,1])[length(Xfer.table[,1])]<-"Total"
 #Xfer.table<-Xfer.table[,c("Transfer Reason", "KAP", "KAMS", "KCCP", "KBCP", "Region")]
 
 # Create table of each student transferred with School, Grade, reason, comment.
+message("Create Xfer.students.table")
 Xfer.students.table <- Xfer.students.table %>% 
   mutate(LastFirst = paste(LAST_NAME, FIRST_NAME, sep=', '),
          School=school_abbrev(SCHOOLID),
          School=factor(School, levels=c("KAP", "KAMS", "KCCP", "KBCP")),
          Transferred=format(ymd_hms(EXITDATE), format="%b %d, %Y")) %>%
-  select(School,
+  select(School, 
+         LastFirst,
          Grade=GRADE_LEVEL,
          Transferred,
          Reason,

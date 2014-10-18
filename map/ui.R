@@ -7,7 +7,7 @@ subjs <-  list("Mathematics",
                "Reading",  
                "General Science"
                )
-grades <- c("K", 1:8)
+grades <- c(0:8)
 
 seasons<-c("Fall - Spring",
            "Spring - Spring",
@@ -121,7 +121,6 @@ shinyUI(fluidPage(
                ),
              fluidRow(
                column(12,
-                      progressInit(),
                       plotOutput("dashboard_panel")
                       )
                )
@@ -140,7 +139,7 @@ shinyUI(fluidPage(
                       selectInput(inputId="selectSummSY", 
                                   label="Year(s) Selected:",
                                   choices=sys,
-                                  selected="2014-2015",
+                                  selected="2013-2014",
                                   #type="select",
                                   multiple=TRUE
                                   )

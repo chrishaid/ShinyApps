@@ -46,7 +46,7 @@ tabSummaryMAP <- function(.data, school="KAMS"){
   dt.sum[order(School, Subject, Grade)]
 }
 
-map.F13W14 <- map.data[SY=="2013-2014"]
+#map.F13W14 <- map.data[SY=="2013-2014"]
 
 shinyServer(function(input, output, session) {
   # Trick SO on delaying rendering:
@@ -195,7 +195,7 @@ output$main_table <- renderDataTable({
 getSummaryTable <- reactive({
   tbData<-tabSummaryMAP(map.all.growth.sum, map.all.growth.sum[,unique(School)]) 
   
-  tbData[,Grade:=factor(Grade, levels=c("K", 1:8))]
+  #tbData[,Grade:=factor(Grade, levels=c("K", 1:8))]
   
   tbData[,Subject:=factor(Subject, levels=c("Mathematics",
                                             "Reading",

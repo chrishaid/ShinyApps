@@ -14,7 +14,7 @@ message("Logging into server . . . ")
 
 message('Getting 10/01/14 attendance')
 
-sql.statment<-"SELECT
+sql.statement<-"SELECT
 m.SchoolID,
 s.student_number as StudentID,
 s.first_name,
@@ -37,7 +37,7 @@ WHERE m.calendardate = '01-OCT-14'
 ORDER BY schoolid, grade_level
 "
 
-Enrolled.131001<-read.jdbc.ffdf(query=sql.statement,
+Enrolled.141001<-read.jdbc.ffdf(query=sql.statement,
                dbConnect.args = list( 
                  drv=drvr,
                  url=pspw$SERVER,

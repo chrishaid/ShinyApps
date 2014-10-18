@@ -52,10 +52,11 @@ transferplot.data.prep <- function (transfers.data, enrolled.data) {
   
   ############ Change the filter below to deal with interKIPP transfers ####
   transfers.data <- transfers.data %>%
-  #  filter(EXITCODE!=11) %>%
-    mutate(Month=month(ymd_hms(transfers.data$EXITDATE), label=TRUE),
+    mutate(
+           Month=month(ymd_hms(transfers.data$EXITDATE), label=TRUE),
            Week=week(ymd_hms(transfers.data$EXITDATE))
-           )
+           ) %>%
+    filter(EXITCODE!=11)
   #exit gracefuly if nrow(transfers.data)==0
   
   #transfers.data$Month<-lubridate::month(ymd_hms(transfers.data$EXITDATE), label=TRUE)
@@ -69,11 +70,23 @@ transferplot.data.prep <- function (transfers.data, enrolled.data) {
   #monthly.by.school<-transfers.data[,list(N=.N), by=list(SCHOOLID, Month)][order(Month)]
   #monthly.by.school<-arrange(ddply(transfers.data, .(SCHOOLID, Month), summarise, N=length(Month)), Month)
   
+  ####Need to build data fram that contains actual YTD, as well as 10% annual ceiling for each school.  Months need to 
+  # start with October
+  mons<-c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")
+  mons<-factor(mons, levels=mons, ordered=TRUE)
+  #Schools<-unique(as.character(monthly.by.school$School))
+  Schools<-factor(c("KAP", "KAMS","KCCP", "KBCP" ), 
+                  levels=c("KAP", "KAMS","KCCP", "KBCP" ))
+  
+  
   cum.monthly<-monthly.by.school %>%
+    mutate(Month=factor(as.character(Month), levels=mons)) %>%
+    dplyr::arrange(SCHOOLID, Month) %>%
     group_by(SCHOOLID) %>%
-    mutate(YTD=cumsum(N)) %>%
+    mutate(YTD=with_order(Month, cumsum, x=N)) %>%
     select(SCHOOLID, Month, N, YTD) %>%
-    mutate(School=school_abbrev(SCHOOLID))
+    mutate(School=school_abbrev(SCHOOLID),
+           School=factor(School, levels=c("KAP", "KAMS","KCCP", "KBCP")))
   
   #cum.monthly<-monthly.by.school[,list(Month, N, YTD=cumsum(N)), by=SCHOOLID]
   #cum.monthly<-ddply(monthly.by.school, .(SCHOOLID), transform, YTD=cumsum(N))
@@ -83,20 +96,10 @@ transferplot.data.prep <- function (transfers.data, enrolled.data) {
   #cum.monthly[SCHOOLID==400146, School:="KCCP"]
   #cum.monthly[SCHOOLID==400163, School:="KBCP"]
   
-  ####Need to build data fram that contains actual YTD, as well as 10% annual ceiling for each school.  Months need to 
-  # start with October
-  mons<-c("Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep")
-  #mons<-factor(mons, levels=mons, ordered=TRUE)
 
-  cum.monthly <- cum.monthly %>%
-    mutate(Month=factor(as.character(Month), levels=mons))
+    
   
-  #School<-c("KAPS", "KAMS", "KCCP")
-  Schools<-unique(as.character(cum.monthly$School))
-  Schools<-factor(Schools, levels=c("KAP", "KAMS","KCCP", "KBCP" ))
-  
-  cum.monthly <- cum.monthly %>%
-    mutate(School=factor(School, levels=c("KAP", "KAMS","KCCP", "KBCP" )))
+  #School<-c("KAPS", "KAMS", "KCCP
 
   redline<-enrolled.data %>%
     group_by(SCHOOLID) %>%
@@ -116,19 +119,20 @@ transferplot.data.prep <- function (transfers.data, enrolled.data) {
 #   redline[SCHOOLID==400163, School:="KBCP"]
 #   redline<-redline[,list(School, line.month)]
   
-  xferplot.data<-expand.grid(Month=mons, 
+xferplot.data<-expand.grid(Month=factor(as.character(mons)), 
                              School=Schools, 
-                             Variable=c("Cumulative Transfers", "Ceiling"))
+                             Variable=c("Cumulative Transfers", "Ceiling")) %>%
+  left_join(y=redline, 
+            by="School") %>%
+  dplyr::rename(Value=line.month) %>%
+  mutate(Value=ifelse(Variable=="Cumulative Transfers", NA, Value))
   
-  xferplot.data<-left_join(x=xferplot.data, 
-                           y=redline, 
-                           by="School")
+
+  #xferplot.data$Value[xferplot.data$Variable=="Cumulative Transfers"]<-NA
   
-#xferplot.data<-merge(x=xferplot.data, y=redline, by="School",all.x=TRUE )
-names(xferplot.data)[4]<-"Value"
-  xferplot.data$Value[xferplot.data$Variable=="Cumulative Transfers"]<-NA
-  
-xfer.cums<-cum.monthly %>% select(School, Month, N) %>%
+xfer.cums<-cum.monthly %>% 
+  mutate(Month=as.character(Month)) %>%
+  select(School, Month, N, YTD) %>%
    mutate(Variable="Cumulative Transfers")
   
 #[,list(School, Month, N)]
@@ -139,8 +143,9 @@ xferplot.merge<-left_join(xferplot.data,
                       xfer.cums, 
                       by=c("School", "Month", "Variable"), 
                       ) %>%
-  mutate(Value=ifelse(!is.na(N), N, Value)) %>%
-  select(1:4) %>%
+  mutate(Value=ifelse(!is.na(N), N, Value),
+         Month=factor(as.character(Month), levels=mons)) %>%
+  select(School, Month, Variable, Value) %>%
   arrange(School, Variable, Month) 
   
   #xferplot.merge<-merge(xferplot.data, 
@@ -188,4 +193,5 @@ xferplot2<- left_join(hsr_enrolled, xferplot, by="School") %>%
 #   as.data.frame(xferplot2)
   #x<-as.data.frame(xferplot2)
   #arrange(x, School, Variable, Month)
+xferplot2
 }

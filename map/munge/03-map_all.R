@@ -3,7 +3,7 @@
 #fix 2010-11 data which has kindergarten at KAMS
 map.all[map.all$SchoolName=="KIPP Ascend Middle School" & map.all$Grade<5,"SchoolName"]<-"KIPP Ascend Primary School"
 
-map.all<-map.all %.% 
+map.all<-map.all %>% 
   mutate(Season=str_extract(TermName, 
                             "[[:alpha:]]+"), 
          Year1=as.integer(str_extract(TermName, 
@@ -13,15 +13,15 @@ map.all<-map.all %.%
                     TermName)),
          SY=paste(Year1, Year2, sep="-"),
          CohortYear=(12-Grade)+as.numeric(Year2)
-  ) %.%
-  filter(Year1 >= 2010 & GrowthMeasureYN=='TRUE') %.%
+  ) %>%
+  filter(Year1 >= 2010 & GrowthMeasureYN=='TRUE') %>%
   mutate(SchoolInitials   = abbrev(SchoolName, list(old="KAPS", new="KAP")), 
          TestQuartile     = kipp_quartile(TestPercentile),
          KIPPTieredGrowth = tiered_growth(TestQuartile, Grade)
          )
 
 map.all<-cbind(map.all,
-               nwea_growth(map.all$Grade, 
+               mapvisuals::nwea_growth(map.all$Grade, 
                            map.all$TestRITScore, 
                            map.all$MeasurementScale
                            )
@@ -167,9 +167,10 @@ setnames(map.all.growth.sum.p,
 map.all.growth.sum.p<-na.omit(map.all.growth.sum.p)
 
 require(dplyr)
+message("Class by current Grade")
 class_current_grade<-group_by(map.all.growth.sum.p, 
-                              by=Class) %>% 
-  summarize(Grade=max(Grade)) %>% 
+                              Class) %>% 
+  dplyr::summarize(Grade=max(Grade)) %>% 
   mutate(Class2=paste0(Class, 
                        "\n(Current grade: ", 
                        Grade, ")")

@@ -5,6 +5,7 @@ library(data.table)
 library(lubridate)
 library(ggplot2)
 library(reshape)
+#library(reshape2)
 library(knitr)
 library(RCurl)
 library(xtable)
@@ -39,9 +40,10 @@ source('data/Xfers.HSR.1213.R', local=TRUE)
 source('data/Xfers.HSR.1314.R', local=TRUE)
 source('data/Xfers.HSR.1415.R', local=TRUE)
 
+message('Creating transfer and suspension tables')
 source('munge/02-Tranfers_Prep.R', local=TRUE)
 
-message('Creating transfer and suspension tables')
+
 
 #### Date information ####
 message("Getting first day of school and current day information")

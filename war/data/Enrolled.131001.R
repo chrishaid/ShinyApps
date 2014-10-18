@@ -14,7 +14,7 @@ drvr <- JDBC("oracle.jdbc.driver.OracleDriver", "/var//lib/jdbc//ojdbc6.jar","")
 
 message('Getting 10/01/13 attendance')
 
-sql.statment<-"SELECT
+sql.statement<-"SELECT
 m.SchoolID,
                             s.student_number as StudentID,
 s.first_name,
