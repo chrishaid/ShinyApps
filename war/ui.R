@@ -31,7 +31,7 @@ shinyUI(
         p(em(update_time_stamp)),
         br(),
         #busyIndicator("Counting students! Please be patient.", wait = 1000),
-        tabsetPanel(
+        navlistPanel(
           tabPanel(title="Attendance",
                    tabsetPanel(
                      tabPanel(title="Daily",
@@ -56,8 +56,7 @@ shinyUI(
                                                         max=thisweek
                                                         ),
                                          plotOutput("plotAttendEnroll",
-                                                    height="600px"),
-                                         dataTableOutput("dtDEA")
+                                                    height="600px")
                                          ),
                                         
                                 tabPanel(title="Table",
@@ -72,16 +71,16 @@ shinyUI(
                                          )
                                 )
                               ),
-                     tabPanel(title = "YTD PowerSchool vs IMPACT",
-                              h4("Powerschool vs. IMPACT* YTD Attendance"),
-                              htmlOutput("impact"),
-                              p(tags$small("*IMPACT data is only updated on the first day of each school week. ",  
-                                           "Consequently, the ",
-                                           strong("Difference"),
-                                           "column will show wider discrepencies as the week progresses"
-                              )
-                              )
-                     ),
+#                      tabPanel(title = "YTD PowerSchool vs IMPACT",
+#                               h4("Powerschool vs. IMPACT* YTD Attendance"),
+#                               htmlOutput("impact"),
+#                               p(tags$small("*IMPACT data is only updated on the first day of each school week. ",  
+#                                            "Consequently, the ",
+#                                            strong("Difference"),
+#                                            "column will show wider discrepencies as the week progresses"
+#                               )
+#                               )
+#                      ),
                      tabPanel(title="Weekly & YTD",
                               h4("YTD and Weekly Average Daily Attendance"),
                               br(),
@@ -94,7 +93,7 @@ shinyUI(
                               )
                      )
                    ),
-          tabPanel(title="HSR Transfers",
+          tabPanel(title="Transfers",
                    h3("Transfers"),
                    h4("Healthy Schools & Regions transfer totals"),
                    
@@ -114,8 +113,7 @@ shinyUI(
                        ),
                    tabsetPanel(
                      tabPanel(title="Visualization",
-                              div(class="well",
-                              plotOutput("plotTransfers"))
+                              plotOutput("plotTransfers")
                      ),
                      tabPanel(title="Summary Table",
                               htmlOutput("xfersSummary")
@@ -125,30 +123,19 @@ shinyUI(
                               )
                    )
           ),
-          tabPanel(title="Suspension Events",
-                   h3("Suspension Events"),
+          tabPanel(title="Suspensions",
+                   h3("Suspensions"),
                    #fluidRow(
                    #column(4,
                   #          selectInput('susp_input', 'Options', c("A","B","C"), multiple=TRUE, selectize=TRUE)
                    #         )
                    #),
+                  plotOutput("suspensions_viz"),
+                  hr(),
                    dataTableOutput("suspensions")
                    ),
-          tabPanel(title="Suspension Days",
-                   h3("Suspensions Days"),
-                   div(class="alert alert-info", p(strong('Note:'),'In this report the metric ', strong('suspensions'),  ' represents days absent due to suspensions and not the number of suspension events. That is, a student recieving a 3-day suspension would appear in this report as having 3 "suspensions" (i.e., three absenses due to being out of school serving a suspension).')),
-                   tabsetPanel(
-                     tabPanel(title="Weekly",
-                              htmlOutput("suspWeeklyBySchool")
-                     ),
-                     tabPanel(title="Year-to-date",
-                              htmlOutput("suspYTDByGrade")
-                     ),
-                     tabPanel(title="Suspension Leaders",
-                              dataTableOutput("suspLeaders")
-                     )
-                   )
-          )
+          widths = c(2, 10),
+          well=FALSE
         )
     )
   )

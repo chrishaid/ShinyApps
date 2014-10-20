@@ -95,8 +95,41 @@ shinyServer(function(input, output, session) {
  
   
   getDAE <- reactive({
-   dt<-DailyEnrollAttend.plotdata.melt %>%
+   DAE<-DailyEnrollAttend.plotdata.melt %>%
      filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2]))
+   
+   DAE.ytd.plot<-DailyEnrollAttend.plotdata.melt %>% as.data.frame %>%
+     cast(Date + Day + School + WeekOfShortDateLabel ~ variable) %>% 
+     as.data.frame %>%
+     group_by(School) %>% 
+     dplyr::mutate(Cum_Enrolled=order_by(Date, cumsum(Enrolled)), 
+                   Cum_Attended=order_by(Date, cumsum(Attended)),
+                   YTD_ADA = round(Cum_Attended/Cum_Enrolled*100,1)
+     ) %>%
+     filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2])) %>%
+     arrange(School, Date) 
+   
+   DAE.weekly.ada <- DAE.ytd.plot %>%
+     group_by(School, WeekOfShortDateLabel) %>%
+     dplyr::summarise(Weekly_ADA=round(sum(Attended)/sum(Enrolled)*100,1),
+                      y_pos=min(Attended)
+     ) 
+   
+   DAE.weekly.ytd.plot<- DAE.ytd.plot %>%
+     group_by(School, WeekOfShortDateLabel) %>%
+     filter(Day==max(Day)) %>%
+     select(School, WeekOfShortDateLabel, Day, YTD_ADA) %>%
+     inner_join(DAE.weekly.ada, by=c("School", "WeekOfShortDateLabel")) %>%
+     group_by(School) %>%
+     dplyr::mutate(y_pos=min(y_pos),
+                   x_pos=max(Day),
+                   threshold=ifelse(Weekly_ADA>=96, "Weekly ≥ 96%", "Weekly < 96")
+     )
+   
+   dt<-list(DAE=DAE,
+            DAE.weekly.ytd.plot=DAE.weekly.ytd.plot
+            )
+   dt
   })
   
   # can't plot a line with only one point (so need)
@@ -109,35 +142,14 @@ shinyServer(function(input, output, session) {
     
     message("get DAE")
     incProgress(.3, detail = "Getting data")
-    DAE <- getDAE()
+    DAE.list <- getDAE()
+    
+    DAE.weekly.ytd.plot<-DAE.list$DAE.weekly.ytd.plot 
+    DAE<-DAE.list$DAE
     
     incProgress(.4, detail = "Calculting ADA")
     
-    DAE.ytd.plot<-DAE %>% as.data.frame %>%
-      cast(Date + Day + School + WeekOfShortDateLabel ~ variable) %>% 
-      as.data.frame %>%
-      group_by(School) %>% 
-      dplyr::mutate(Cum_Enrolled=order_by(Date, cumsum(Enrolled)), 
-                    Cum_Attended=order_by(Date, cumsum(Attended)),
-                    YTD_ADA = round(Cum_Attended/Cum_Enrolled*100,1)
-      ) %>%
-      arrange(School, Date) 
     
-    DAE.weekly.ada <- DAE.ytd.plot %>%
-      group_by(School, WeekOfShortDateLabel) %>%
-      dplyr::summarise(Weekly_ADA=round(sum(Attended)/sum(Enrolled)*100,1),
-                y_pos=min(Attended)
-      )
-    
-    DAE.weekly.ytd.plot<- DAE.ytd.plot %>%
-      group_by(School, WeekOfShortDateLabel) %>%
-      filter(Day==max(Day)) %>%
-      select(School, WeekOfShortDateLabel, Day, YTD_ADA) %>%
-      inner_join(DAE.weekly.ada, by=c("School", "WeekOfShortDateLabel")) %>%
-      group_by(School) %>%
-      dplyr::mutate(y_pos=min(y_pos),
-             x_pos=max(Day)
-      )
     
     
     # Determine if there is only one day worth of data
@@ -168,9 +180,10 @@ shinyServer(function(input, output, session) {
                                 YTD_ADA,
                                 "\nWeekly ADA: ",
                                 Weekly_ADA),
-                   alpha=Weekly_ADA>=96
+                   #alpha=Weekly_ADA>=96,
+                   color=threshold
                    ),
-               color="purple",
+               #color="orange",
                #alpha=.7,
               hjust=1,
               vjust=0,
@@ -179,8 +192,8 @@ shinyServer(function(input, output, session) {
                ) +
     scale_x_continuous(breaks = c(2,3,4,5,6), labels=c("M","T","W","R","F")) + #Change numberd week days to lettered
     scale_y_continuous("# of Students") + 
-    scale_colour_manual("", values=c("#8D8685", "#439539", "black")) +
-    scale_alpha_manual("Weekly ADA >= 96%", values=c(.4,1)) +
+    scale_colour_manual("", values=c("#439539", "black","#8D8685", "#E27425", "#439539")) +
+    #scale_alpha_manual("Weekly ADA >= 96%", values=c(.4,1)) +
     facet_grid(School~WeekOfShortDateLabel, scales="free_y") +
     theme_bw() + 
     theme(legend.position="bottom", 
@@ -452,47 +465,55 @@ xferplot2.nm<-filter(xferplot.nm,  !(is.na(Value) & Year=="SY14-15"))
                                           )
   
   ### Suspensions ####
- load("data/discipline.Rdata")
- output$suspensions<-renderDataTable({disc.dt},
-                                      options = list(bSortClasses = TRUE,
-                                                     aLengthMenu = list(c(10,20, 50, -1), 
-                                                                        list(10,20,50,'All')
-                                                                        ), 
-                                                     iDisplayLength = 10,
-                                                     "sDom"='T<"clear">lfrtip',
-                                                     "oTableTools"=list("sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
-                                                                        )
-                                                     )
+ load("data/suspensions.Rdata")
+
+message("Loading Illuminate suspensions data")
+susp.dt <-susp %>%
+  mutate(Referrer = paste(staff_last_name, 
+                          staff_first_name),
+         SY=ifelse(date_assigned >= ymd("140818"), "SY14-15", "SY13-14")
+  ) %>%
+  select("School Year" = SY,
+         School,
+        "First Name" = stu_first_name,
+         "Last Name" = stu_last_name,
+         "Grade" = grade_level,
+         "Violation" = description,
+         "Date Assigned" = date_assigned,
+         "Consequence" = code_translation,
+         "Duration" = length,
+         Referrer) %>%
+  as.data.frame
+
+output$suspensions_viz <- renderPlot({
+  p<-ggplot(as.data.frame(susp_plot_data), aes(x=Month, y=Cum_N)) + 
+    geom_step(data=susp_plot_data %>% 
+                group_by(SY, School, Type) %>% 
+                filter(n()>=2), 
+              aes(color=SY, group=SY), direction="hv") + 
+    geom_point(aes(color=SY)) +
+    geom_text(aes(y=Cum_N+1.5,
+                  color=SY,
+                  label=Cum_N), 
+              vjust=0,
+              size=4) +
+    facet_grid(Type~School) +
+    scale_color_manual(values = c("#C49A6C", "#17345B")) +
+    theme_bw()
+  
+  p
+  })
+
+
+ output$suspensions<-renderDataTable(susp.dt,
+                                     options = list(
+                                       lengthMenu = list(c(5, 15, -1), 
+                                                         c('5', '15', 'All')
+                                                         ),
+                                       pageLength = 20)
                                       )
+
   
-  # Attendace based
-  source('src/suspension_tables.R', local=TRUE)
-  
-  output$suspWeeklyBySchool <- renderPrint(kable(WeeklySuspensionsBySchool.xtable, 
-                                                     format='html', 
-                                                     table.attr='class="table table-responsive table-hover table-condensed table-striped"', 
-                                                     output=TRUE,  
-                                                     row.names=FALSE)
-                                               )
-  
-  output$suspLeaders <- renderDataTable({Sups.leaders},
-                                        options = list(bSortClasses = TRUE,
-                                                       aLengthMenu = list(c(10,20, 50, -1), 
-                                                                          list(10,20,50,'All')
-                                                       ), 
-                                                       iDisplayLength = 10,
-                                                       "sDom"='T<"clear">lfrtip',
-                                                       "oTableTools"=list("sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
-                                                                          )
-                                        )
-  )
-  
-  
-  output$suspYTDByGrade <- renderPrint(kable(YTDSuspensionsByGradeBySchool.xtable, 
-                                                     format='html', 
-                                                     table.attr='class="table table-responsive table-hover table-condensed table-striped"', 
-                                                     output=TRUE,  
-                                                     row.names=FALSE))
   
     
 }

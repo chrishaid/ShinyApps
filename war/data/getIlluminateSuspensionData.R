@@ -1,72 +1,35 @@
-# Illuminate Suspension tests
-
 require(dplyr)
-require(data.table)
+require(ggplot2)
 require(lubridate)
+
+source("lib/transfer_helpers.R")
 #connect to illuminate database ####
 message("Connect to Illuminate database")
 ill_config<-as.list(read.dcf('../config/ill.dcf',all = TRUE))
-ill.src<-src_postgres(dbname=ill_config$dbname, 
-                  host=ill_config$host, 
-                  port=ill_config$port,
-                  user=ill_config$user, 
-                  password=ill_config$pwd)
 
-# get all Illuminate tables ####
-message("Get Illuminate tables")
-# Students
+message("Connect to Illuminate databese")
+ill.src<-src_postgres(dbname=ill_config$dbname, 
+                      host=ill_config$host, 
+                      port=ill_config$port,
+                      user=ill_config$user, 
+                      password=ill_config$pwd)
+message("Getting Students")
 ill.students<-tbl(ill.src, "students")
 
-# Get term
+
+# First, get grades into students table via terms
 ill.student_term_aff<-tbl(ill.src, "student_term_aff")
 ill.terms<-tbl(ill.src, "terms")
 ill.sessions<-tbl(ill.src, "sessions")
-
-# Get current enrollment
-sqry<-sprintf("SELECT * FROM dd_currently_enrolled(to_date('%s','YY-MM-DD'))", today())
-
-ill.dd_currently_enrolled<-tbl(ill.src, sql(sqry))
-
-
 # Get grade_levels
 ill.grade_levels<-tbl(ill.src, "grade_levels")
 
-# Users
-ill.users<-tbl(ill.src, "users")
-
-# Discpline events
-ill.student_discipline<-tbl(ill.src, "student_discipline")
-
-# Discipline Violations
-ill.student_discipline_violation<-tbl(ill.src, "student_discipline_violation")
-
-# "codes.table_name" require select statements to pull into R
-#sqry2<-'Select code_id AS "violation_code_id", code_translation AS "violation" from codes.discipline_violation'
-#ill.codes_discipline_violation<-tbl(ill.src, sql(sqry2))
-
-#Discipline consequences
-ill.student_discipline_consquence<-tbl(ill.src, "student_discipline_consequence")
-
-# Discipline actions
-ill.codes_discipline_actions<-tbl(ill.src, sql('SELECT code_id AS "consequence_action_id", code_translation AS "consequence" FROM codes.discipline_actions'))
-
-# Discipline descriptions
-ill.codes_discipline_short_descriptons<-tbl(ill.src, 
-                                            sql('SELECT code_id AS "short_description_id", code_translation AS "description"  from codes.discipline_short_description'))
-# Dsicpline locations
-ill.codes_discipline_location<-tbl(ill.src, 
-                                            sql('SELECT code_id AS "location_id", code_translation AS "location"  from codes.discipline_location'))
-
-# Munge illuminate tables  ####
-message("Munging Illuminate Tables")
-
-# First, get grades into students table via terms
 
 students_all<-select(ill.students, student_id, local_student_id, first_name, last_name) %>% 
   mutate(stu_first_name=first_name, stu_last_name=last_name) %>%
   select(student_id, local_student_id, stu_first_name, stu_last_name)
 
-session_terms<-filter(ill.sessions, academic_year==2015) %>% 
+session_terms<-filter(ill.sessions) %>% 
   left_join(ill.terms, by="session_id") %>%
   inner_join(ill.student_term_aff, by="term_id") %>%
   left_join(ill.grade_levels, by="grade_level_id")
@@ -74,135 +37,97 @@ session_terms<-filter(ill.sessions, academic_year==2015) %>%
 students<-left_join(students_all, session_terms, by="student_id") %>%
   mutate(school_id=site_id) %>%
   select(student_id, local_student_id, stu_first_name, stu_last_name,
-         short_name, school_id)
+         grade_level=short_name, school_id)
 
 
 
 
 
+message("Getting consequences")
+ill.consequences<-tbl(ill.src, sql("select * from behavior.consequences"))
+
+message("Getting consqequence type")
+
+ill.behavior_consequences<-tbl(ill.src, sql("select * from codes.behavior_consequences")) 
+
+ill.behavior_desciptions<-tbl(ill.src, sql("select * from codes.behavior_descriptions")) %>%
+  select(description_id=code_id, description=code_translation)
+
+message("Getting incidents")
+ill.incidents<-tbl(ill.src, sql("select * from behavior.incidents")) %>%
+  select(incident_id, school_site_id, description_id) %>%
+  left_join(ill.behavior_desciptions, by="description_id")
+
+message("getting Participants")
+ill.participants<-tbl(ill.src, sql("select * from behavior.participants")) %>%
+  left_join(ill.incidents, by="incident_id")
 
 
+message("Getting users")
+ill.users<-tbl(ill.src, "users") %>%
+  select(user_id, 
+         staff_first_name=first_name, 
+         staff_last_name=last_name)
 
 
-# Munge Discpline ####
-
-discipline_events <- select(ill.student_discipline,
-                     discipline_id,
-                     created_by,
-                     discipline_datetime,
-                     short_description_id,
-                     other_short_description,
-                     other_location,
-                     location_id,
-                     referred_by,
-                     student_id,
-                     site_id,
-                     notes
-                     ) %>% left_join(students, by="student_id")
+ill.consequences2<-left_join(ill.consequences, 
+                             ill.behavior_consequences, 
+                             by=c("consequence_type_id"="code_id")) 
 
 
-discipline_consequence<-left_join(ill.student_discipline_consquence, 
-                                  ill.codes_discipline_actions, 
-                                  by="consequence_action_id")
-
-discipline<-left_join(discipline_events,
-                      discipline_consequence, 
-                      by="discipline_id") %>% 
-  left_join(ill.codes_discipline_short_descriptons, 
-            by="short_description_id") %>%
-  left_join(ill.codes_discipline_location, 
-            by="location_id")
-
-
-
-users<-mutate(ill.users, 
-       ref_first_name=first_name, 
-       ref_last_name=last_name,
-       referred_by=user_id) %>%
-  select(ref_first_name, ref_last_name, referred_by)
-
-disc<-left_join(discipline, users, by="referred_by") %>%
-  select(site_id, 
+ill.participants_consequences <- left_join(ill.participants, 
+                                           ill.consequences2, 
+                                           by="participant_id") %>%
+  left_join(students,
+            by="student_id") %>%
+  select(student_id, 
          school_id,
-         short_name, 
          local_student_id, 
-         stu_first_name, 
-         stu_last_name, 
-         ref_first_name,
-         ref_last_name,
-         discipline_datetime,
+         stu_first_name,
+         stu_last_name,
+         grade_level,
          description,
-         other_short_description,
-         location,
-         other_location,
-         consequence,
-         number_of_days,
-         consequence_notes
-         )
-
-# change to data table, change column names and save as .Rdata
-
-message("Collecting discipline data and casting as data.table")
-discipline.dt<-data.table(collect(disc))
-
-message("Renaming schools and combining names")
-discipline.dt[school_id==78102, School:="KAP"]
-discipline.dt[school_id==7810, School:="KAMS"]
-discipline.dt[school_id==400146, School:="KCCP"]
-discipline.dt[school_id==400163, School:="KBCP"]
-
-discipline.dt[,School:=factor(School, levels=c("KAP", "KAMS", "KCCP", "KBCP"))]
-
-discipline.dt[,Student:=paste(stu_last_name, 
-                              stu_first_name,
-                              sep=", ")]
-discipline.dt[,"Referrer":=paste(ref_last_name, 
-                              ref_first_name,
-                              sep=", ")]
+         user_id=created_by.x, 
+         date_assigned, 
+         code_id, 
+         code_key, 
+         code_translation,
+         length=assigned_duration_days) %>%
+  filter(code_id %in% c(74, 75, 79, 80)) %>%
+  left_join(ill.users, by="user_id")
 
 
-message("Renaming columns")
 
-disc.dt<-discipline.dt[,
-                           list(School,
-                                  short_name,
-                                  local_student_id,
-                                  Student,
-                                  discipline_datetime,
-                                  Referrer,
-                                  description,
-                                  location,
-                                  consequence,
-                                  number_of_days)][order(School, 
-                                                              short_name,
-                                                              discipline_datetime,
-                                                              Student)]
-setnames(disc.dt, 
-         c("local_student_id",
-           "short_name",
-           "discipline_datetime",
-           "Referrer",
-           "description",
-           "location",
-           "consequence",
-           "number_of_days"
-           ),
-         
-         c("Student ID",
-           "Grade",
-           "Date/Time",
-           "Referred by",
-           "Violation",
-           "Location",
-           "Consequence",
-           "Length (Days)"
-           )
-         )
+schools<-c("KAP", "KAMS", "KCCP", "KBCP")
+
+susp<-collect(ill.participants_consequences) %>% 
+  mutate(School=school_abbrev(school_id),
+         School=factor(School, levels=schools)) %>%
+  rename(StudentID=student_id
+  )
 
 
-save(disc.dt, file="discipline.Rdata")
+mons<-c("Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul")
+
+susp_plot_data <- susp %>% 
+  mutate(Type=ifelse(code_id %in% c(75,79), "ISS", "Suspension")) %>%
+  group_by(School, date_assigned, Type) %>% 
+  summarize(N=n()) %>%
+  mutate(Month_Year=floor_date(date_assigned,"month"),
+         SY=ifelse(date_assigned >= ymd("140818"), "SY14-15", "SY13-14")) %>%
+  ungroup %>%
+  group_by(School, Month_Year, SY, Type) %>%
+  summarize(N=n()) %>%
+  ungroup %>%
+  group_by(School, SY, Type) %>%
+  mutate(Cum_N=with_order(Month_Year, cumsum, N),
+         Month=month(Month_Year, label=TRUE, abbr = TRUE),
+         Month=factor(as.character(Month), levels=mons, ordered=TRUE)) %>%
+  as.data.frame
+
+
+
+
+
+save(susp, susp_plot_data, file="suspensions.Rdata")
 system('touch ../restart.txt')
-
-
-
-
