@@ -113,7 +113,7 @@ AttByStudentBySchool<-Attendance %>% data.frame %>%
 ADA_28<- Attendance %>% data.frame %>%
   dplyr::filter(Date>=ymd(as.character(today() - days(28)))) %>%
   group_by(StudentID) %>%
-  mutate( 
+  summarize( 
          ADA_28=round(100*(1-(sum(Absent)/n())),1)) %>%
   select(StudentID, ADA_28)
 
@@ -124,12 +124,13 @@ ADA_28<- Attendance %>% data.frame %>%
 #setkey(AttByStudentBySchool, StudentID)
 
 AttByStudentBySchool <- left_join(AttByStudentBySchool, ADA_28, by="StudentID") %>%
+  arrange(School, ADA, ADA_28, Grade, Student) %>%
   select(School, 
          Grade, 
          Student, 
          ADA, 
          "ADA (prior month)" = ADA_28, 
-         Absences)
+         Absences) 
 
 #AttByStudentBySchool<-copy(ADA_28.dt[AttByStudentBySchool][order(School, Grade, ADA)][,list(School, Grade, Student, ADA, ADA_28, Absences)])
 
