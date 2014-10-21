@@ -104,18 +104,21 @@ shinyServer(function(input, output, session) {
      group_by(School) %>% 
      dplyr::mutate(Cum_Enrolled=order_by(Date, cumsum(Enrolled)), 
                    Cum_Attended=order_by(Date, cumsum(Attended)),
-                   YTD_ADA = round(Cum_Attended/Cum_Enrolled*100,1)
-     ) %>%
+                   YTD_ADA = round(Cum_Attended/Cum_Enrolled*100,1),
+                   ADA=round(Attended/Enrolled*100,1)
+     ) 
+   
+   DAE.ytd.plot.filtered <- DAE.ytd.plot %>%
      filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2])) %>%
      arrange(School, Date) 
    
-   DAE.weekly.ada <- DAE.ytd.plot %>%
+   DAE.weekly.ada <- DAE.ytd.plot.filtered  %>%
      group_by(School, WeekOfShortDateLabel) %>%
      dplyr::summarise(Weekly_ADA=round(sum(Attended)/sum(Enrolled)*100,1),
                       y_pos=min(Attended)
      ) 
    
-   DAE.weekly.ytd.plot<- DAE.ytd.plot %>%
+   DAE.weekly.ytd.plot<- DAE.ytd.plot.filtered %>%
      group_by(School, WeekOfShortDateLabel) %>%
      filter(Day==max(Day)) %>%
      select(School, WeekOfShortDateLabel, Day, YTD_ADA) %>%
@@ -126,8 +129,18 @@ shinyServer(function(input, output, session) {
                    threshold=ifelse(Weekly_ADA>=96, "Weekly ≥ 96%", "Weekly < 96")
      )
    
+   DAE.ytd.region<-DAE.ytd.plot %>% group_by(Date) %>%
+     dplyr::summarize(Enrolled=sum(Enrolled),
+               Attended=sum(Attended),
+               Cum_Enrolled=sum(Cum_Enrolled),
+               Cum_Attended=sum(Cum_Attended)) %>%
+     dplyr::mutate(ADA=Attended/Enrolled*100,
+            YTD_ADA=Cum_Attended/Cum_Enrolled*100)
+   
    dt<-list(DAE=DAE,
-            DAE.weekly.ytd.plot=DAE.weekly.ytd.plot
+            DAE.weekly.ytd.plot=DAE.weekly.ytd.plot,
+            DAE.ytd.plot=DAE.ytd.plot,
+            DAE.ytd.region=DAE.ytd.region
             )
    dt
   })
@@ -205,10 +218,46 @@ shinyServer(function(input, output, session) {
           axis.title.y=element_text(size=10),
           legend.text=element_text(size=12)
     )
+  
+  incProgress(.8, detail = "Constructing YTD graph")
+  
+  DAE.ytd.plot<-DAE.list$DAE.ytd.plot %>% 
+    filter(School %in% input$traceSchools)
+  p2 <-
+    ggplot(DAE.ytd.plot,
+           aes(x=Date, y=ADA)) + 
+      geom_hline(aes(yintercept=96), color="darkblue") +
+      geom_point(aes(color=School)) + 
+      geom_smooth(aes(y=YTD_ADA, color=School, size=Enrolled), se=F, span=.1) + 
+      geom_smooth(data=DAE.list$DAE.ytd.region, 
+                  aes(y=YTD_ADA, color=School, size=Enrolled),
+                  se=F, 
+                  span=.1, 
+                  color="black",
+                  size=1) + 
+      geom_text(data=DAE.ytd.plot %>% filter(Date==max(Date)), 
+                aes(y=YTD_ADA, color=School, label=round(YTD_ADA,1)), 
+                size=4,
+                hjust=0, 
+                alpha=.6) +
+    geom_text(data=DAE.list$DAE.ytd.region %>% filter(Date==max(Date)), 
+              aes(y=YTD_ADA, label=round(YTD_ADA,1)), 
+              size=4,
+              hjust=0, 
+              alpha=.2) + 
+      theme_bw()
+  
+  
   incProgress(1, detail = "Drawing graph")
     })
+  
+  
+  
+  
+  
   x<-list(p=p,
-       data=DAE.weekly.ytd.plot)
+          p2=p2
+       )
   x
   })
   
@@ -216,9 +265,14 @@ shinyServer(function(input, output, session) {
   output$plotAttendEnroll <- renderPlot({
       ggAttend()$p
     })
-  output$dtDEA <- renderDataTable({
-    ggAttend()$data
-  }) 
+  output$plotYTDAttend <- renderPlot({
+    ggAttend()$p2 
+    }) 
+  
+  
+  
+  
+  
   # Daily Attend Table ####
   message('Munge  daily enrollement/attendence data table')
   DailyEnrollAttend.dt <- DailyEnrollAttend %>%
