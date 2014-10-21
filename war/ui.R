@@ -37,17 +37,7 @@ shinyUI(
                      tabPanel(title="Daily",
                               h4("Daily Enrollment and Attendance by School"),
                               tabsetPanel(
-                                tabPanel(title="Visualization", 
-                                         div(class="alert alert-info",
-                                             "The light gray lines shows total enrollment. ",
-                                             "The green line demarcates 96% of enrollment ",
-                                             "(i.e., our regional daily attendance goal). ",
-                                             "The black line with dots represents actual attendance, ",
-                                             "where the dot marks the given weekdays attendance. ",
-                                             br(),
-                                             span(class="label label-default", "New"),
-                                             strong("You can now select the date range for the visualization!")
-                                             ),
+                                tabPanel(title="Enrollment & Attendance", 
                                          dateRangeInput("attDates", 
                                                         "Select Dates:",
                                                         start=last6weeks,
@@ -57,6 +47,23 @@ shinyUI(
                                                         ),
                                          plotOutput("plotAttendEnroll",
                                                     height="600px")
+                                         ),
+                                tabPanel("ADA Trace Graph",
+                                         h4("YTD ADA"),
+                                         em("Black traces regional average daily attendance."),
+                                         selectInput(inputId = "traceSchools",
+                                                     label =  "Choose Schools:",
+                                                     choices = c("KAP",
+                                                                 "KAMS",
+                                                                 "KCCP",
+                                                                 "KBCP"),
+                                                     multiple=TRUE,
+                                                     selected=c("KAP",
+                                                                "KAMS",
+                                                                "KCCP",
+                                                                "KBCP")
+                                                    ),
+                                         plotOutput("plotYTDAttend")
                                          ),
                                         
                                 tabPanel(title="Table",
