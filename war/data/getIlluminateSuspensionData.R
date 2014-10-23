@@ -2,7 +2,7 @@ require(dplyr)
 require(ggplot2)
 require(lubridate)
 
-source("lib/transfer_helpers.R")
+source("../lib/transfer_helpers.R")
 #connect to illuminate database ####
 message("Connect to Illuminate database")
 ill_config<-as.list(read.dcf('../config/ill.dcf',all = TRUE))
@@ -29,7 +29,7 @@ students_all<-select(ill.students, student_id, local_student_id, first_name, las
   mutate(stu_first_name=first_name, stu_last_name=last_name) %>%
   select(student_id, local_student_id, stu_first_name, stu_last_name)
 
-session_terms<-filter(ill.sessions) %>% 
+session_terms<-filter(ill.sessions, academic_year==2015) %>% 
   left_join(ill.terms, by="session_id") %>%
   inner_join(ill.student_term_aff, by="term_id") %>%
   left_join(ill.grade_levels, by="grade_level_id")
@@ -44,7 +44,8 @@ students<-left_join(students_all, session_terms, by="student_id") %>%
 
 
 message("Getting consequences")
-ill.consequences<-tbl(ill.src, sql("select * from behavior.consequences"))
+ill.consequences<-tbl(ill.src, sql("select * from behavior.consequences")) %>%
+  filter(is.na(deleted_at))
 
 message("Getting consqequence type")
 
@@ -128,6 +129,8 @@ susp_plot_data <- susp %>%
 
 
 
-
+message("Saving suspensions tables to suspensions.Rdata")
 save(susp, susp_plot_data, file="suspensions.Rdata")
+
+message("Telling Shiny Server to restart")
 system('touch ../restart.txt')

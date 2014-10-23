@@ -525,7 +525,8 @@ message("Loading Illuminate suspensions data")
 susp.dt <-susp %>%
   mutate(Referrer = paste(staff_last_name, 
                           staff_first_name),
-         SY=ifelse(date_assigned >= ymd("140818"), "SY14-15", "SY13-14")
+         SY=ifelse(date_assigned >= ymd("140818"), "SY14-15", "SY13-14"),
+         grade_level=ifelse(SY=="SY13-14", as.integer(grade_level)-1, as.integer(grade_level))
   ) %>%
   select("School Year" = SY,
          School,
