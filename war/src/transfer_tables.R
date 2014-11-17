@@ -21,6 +21,7 @@ Xfer.students.table <- Xfers.HSR.1415 %>%
 
 message("Summarizing Xfer.table")
 Xfer.table <- Xfer.students.table %>% 
+  filter(EXITCODE!=11) %>%
   mutate(School=school_abbrev(SCHOOLID)) %>%
   group_by(Reason, School) %>%
   dplyr::summarize(N=n()) 
