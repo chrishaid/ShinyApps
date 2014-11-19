@@ -83,6 +83,7 @@ ill.participants_consequences <- left_join(ill.participants,
             by="student_id") %>%
   select(student_id, 
          school_id,
+         school_site_id,
          local_student_id, 
          stu_first_name,
          stu_last_name,
@@ -102,9 +103,11 @@ ill.participants_consequences <- left_join(ill.participants,
 schools<-c("KAP", "KAMS", "KCCP", "KBCP")
 
 susp<-collect(ill.participants_consequences) %>% 
-  mutate(School=school_abbrev(school_id),
-         School=factor(School, levels=schools)) %>%
-  rename(StudentID=student_id
+  mutate(school_site_id=ifelse(school_site_id==9999999, school_id, school_site_id),
+         School=school_abbrev(school_site_id),
+         School=factor(School, levels=schools)
+         ) %>%
+  dplyr::rename(StudentID=student_id
   )
 
 
@@ -122,7 +125,7 @@ susp_plot_data <- susp %>%
   ungroup %>%
   group_by(School, SY, Type) %>%
   mutate(Cum_N=with_order(Month_Year, cumsum, N),
-         Month=month(Month_Year, label=TRUE, abbr = TRUE),
+         Month=lubridate::month(Month_Year, label=TRUE, abbr = TRUE),
          Month=factor(as.character(Month), levels=mons, ordered=TRUE)) %>%
   as.data.frame
 
