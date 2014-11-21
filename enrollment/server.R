@@ -33,13 +33,23 @@ shinyServer(function(input, output, session) {
              )
       )
     
-    ggplot(stu_hist %>% filter(miles<10, grade_level>=5),
+    stu_hist2 <- stu_hist %>% filter(miles<10, 
+                                     grade_level %in% input$grade, 
+                                     School %in% input$school)
+    stu_hist_means <- stu_hist2 %>%
+      group_by(School2, grade_level) %>%
+      dplyr::summarize(avg=mean(miles))
+    
+    ggplot(stu_hist2,
            aes(x=miles)
     ) + 
       geom_histogram(aes(y = ..density.., 
                          fill=School),
                      color="white", 
-                     binwidth=1) + 
+                     binwidth=1) +
+      geom_vline(data=stu_hist_means,
+                 aes(xintercept=avg),
+                 color="blue") +
       facet_grid(School2~grade_level) + 
       scale_fill_manual(values = c("#7FC97F",
                                    "#BEAED4",

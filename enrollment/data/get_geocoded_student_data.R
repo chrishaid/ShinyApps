@@ -123,3 +123,6 @@ stus2 <- stus %>%
   filter(!(is.na(lat)|is.na(lon)))
 
 save(stus2, stus, stu_school_distances, kcs, file="gis_students.Rda")
+
+info("Telling Shiny-server to restart.")
+system("touch ../restart.txt")
