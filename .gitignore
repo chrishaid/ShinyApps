@@ -2,6 +2,7 @@
 *.csv
 #ignore .Rdata files
 *.Rdata
+*.Rda
 #ignore DCF files 
 *.dcf
 # ignore excel files
