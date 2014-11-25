@@ -503,35 +503,38 @@ shinyServer(function(input, output, session) {
   
   # Daily Attend Table ####
   message('Munge  daily enrollement/attendence data table')
-  DAE_dt <- reactive({
-    DAE.list<-getDAE()
-    DAE<-DAE.list$DAE.ytd.plot
-    if(input$attSchoolvsHR=="hr"){
-      #if(is.null(input$homerooms)) return()
-      #if(is.null(input$grades_hrs)) return()
-      #if(is.null(input$school_hr)) return()
-      x<-select(DAE,
-                Date, 
-                Week = WeekOfShortDateLabel,
-                Grade,
+ DAE_dt <- reactive({
+   DAE.list<-getDAE()
+   DAE<-DAE.list$DAE.ytd.plot
+   if(input$attSchoolvsHR=="hr"){
+     if(is.null(input$homerooms)) return()
+     if(is.null(input$grades_hrs)) return()
+     if(is.null(input$school_hr)) return()
+     x<-dplyr::filter(DAE, 
+               School==input$school_hr,
+               Grade==input$grades_hrs,
+               Home_Room %in% input$homerooms)  %>%
+       select(Date, 
+               Week = WeekOfShortDateLabel,
+               Grade,
                "Home Room" = Home_Room,
-                Attended,
-                Enrolled,
-                ADA,
+               Attended,
+               Enrolled,
+               ADA,
                "YTD ADA"= YTD_ADA
-               )
-    } else {
-    x <-  select(DAE,
-      Date, 
-      Week = WeekOfShortDateLabel,
-      Attended,
-      Enrolled,
-      ADA,
-      "YTD ADA"= YTD_ADA
-   ) 
- }
- x
-
+     )
+   } else {
+     x <-  select(DAE,
+                  Date, 
+                  Week = WeekOfShortDateLabel,
+                  Attended,
+                  Enrolled,
+                  ADA,
+                  "YTD ADA"= YTD_ADA
+     ) 
+   }
+   x
+   
  })
          
   #setnames(DailyEnrollAttend.dt, "PctAtt", "% Attending")
