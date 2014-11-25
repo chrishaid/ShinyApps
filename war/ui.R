@@ -106,7 +106,7 @@ shinyUI(
                                          plotOutput("plotYTDAttend")
                                          ),
                                         
-                                tabPanel(title="Table",                                      
+                                tabPanel(title="Table", 
                                          dataTableOutput("daily_attend")    
                                          )
                                 )
@@ -126,7 +126,6 @@ shinyUI(
           tabPanel(title="Transfers",
                    h3("Transfers"),
                    h4("Healthy Schools & Regions transfer totals"),
-                   
                    div(class="alert alert-info", 
                        p("Cumulative transfers of students enrolled on",
                             "October 1st of each year and transferred prior to ",

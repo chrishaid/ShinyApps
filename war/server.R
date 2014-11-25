@@ -536,7 +536,7 @@ shinyServer(function(input, output, session) {
          
   #setnames(DailyEnrollAttend.dt, "PctAtt", "% Attending")
   message('Render  daily enrollement/attendence data table')
-  output$daily_attend <- renderDataTable(DAE_dt(),
+  output$daily_attend <- renderDataTable(as.data.frame(DAE_dt()),
                                          options = list(
                                            lengthMenu = list(c(5, 15, -1), 
                                                              c('5', '15', '50', 'All')
@@ -568,7 +568,11 @@ shinyServer(function(input, output, session) {
                                                         #)
                                          #)
   
-  # Weekly & YTD ADA ####
+  
+ 
+ 
+ 
+ # Weekly & YTD ADA ####
   AttRateByWeekBySchool.table<-xtable(arrange(AttRateByWeekBySchool.table, 
                                               desc(AttRateByWeekBySchool.table[["Week of"]]
                                                    )
