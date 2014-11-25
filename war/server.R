@@ -91,64 +91,210 @@ shinyServer(function(input, output, session) {
                                                             "96% of Enrolled", 
                                                             "Attended")
                                                    )
+  # HR only
+  message("Munge DailyEnrollAttend_HR.plotdata")
+  DailyEnrollAttend_HR.plotdata<-DailyEnrollAttendByHR %>%
+    mutate(Day=wday(Date),
+           Enrolled96Pct=Enrolled*.96
+    ) %>%
+    as.data.frame
   
+  DailyEnrollAttend_HR.plotdata.melt<-melt(DailyEnrollAttend_HR.plotdata, 
+                                        id=c("Date", "Day", "School", "Grade", "Home_Room", "WeekOfShortDateLabel"), 
+                                        measure.vars=c("Enrolled", "Enrolled96Pct", "Present"))
+  
+  message("Munge DailyEnrollAttend._HRplotdata: factor labels")                               
+  
+  DailyEnrollAttend_HR.plotdata.melt$variable<-factor(DailyEnrollAttend_HR.plotdata.melt$variable, 
+                                                   labels=c("Enrolled", 
+                                                            "96% of Enrolled", 
+                                                            "Attended")
+                                                   )  
  
+  message("Ascertaining homerooms")
   
-  getDAE <- reactive({
-   DAE<-DailyEnrollAttend.plotdata.melt %>%
-     filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2]))
-   
-   DAE.ytd.plot<-DailyEnrollAttend.plotdata.melt %>% as.data.frame %>%
-     cast(Date + Day + School + WeekOfShortDateLabel ~ variable) %>% 
-     as.data.frame %>%
-     group_by(School) %>% 
-     dplyr::mutate(Cum_Enrolled=order_by(Date, cumsum(Enrolled)), 
-                   Cum_Attended=order_by(Date, cumsum(Attended)),
-                   YTD_ADA = round(Cum_Attended/Cum_Enrolled*100,1),
-                   ADA=round(Attended/Enrolled*100,1)
-     ) 
-   
-   DAE.ytd.plot.filtered <- DAE.ytd.plot %>%
-     filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2])) %>%
-     arrange(School, Date) 
-   
-   DAE.weekly.ada <- DAE.ytd.plot.filtered  %>%
-     group_by(School, WeekOfShortDateLabel) %>%
-     dplyr::summarise(Weekly_ADA=round(sum(Attended)/sum(Enrolled)*100,1),
-                      y_pos=min(Attended)
-     ) 
-   
-   DAE.weekly.ytd.plot<- DAE.ytd.plot.filtered %>%
-     group_by(School, WeekOfShortDateLabel) %>%
-     filter(Day==max(Day)) %>%
-     select(School, WeekOfShortDateLabel, Day, YTD_ADA) %>%
-     inner_join(DAE.weekly.ada, by=c("School", "WeekOfShortDateLabel")) %>%
-     group_by(School) %>%
-     dplyr::mutate(y_pos=min(y_pos),
-                   x_pos=max(Day),
-                   threshold=ifelse(Weekly_ADA>=96, "Weekly ≥ 96%", "Weekly < 96")
-     )
-   
-   DAE.ytd.region<-DAE.ytd.plot %>% group_by(Date) %>%
-     dplyr::summarize(Enrolled=sum(Enrolled),
-               Attended=sum(Attended),
-               Cum_Enrolled=sum(Cum_Enrolled),
-               Cum_Attended=sum(Cum_Attended)) %>%
-     dplyr::mutate(ADA=Attended/Enrolled*100,
-            YTD_ADA=Cum_Attended/Cum_Enrolled*100)
-   
-   dt<-list(DAE=DAE,
-            DAE.weekly.ytd.plot=DAE.weekly.ytd.plot,
-            DAE.ytd.plot=DAE.ytd.plot,
-            DAE.ytd.region=DAE.ytd.region
-            )
-   dt
+  output$grades_hrs <- renderUI({
+    if(input$attSchoolvsHR=='hr') {
+      if(is.null(input$school_hr)) return()
+      homerooms<-DailyEnrollAttendByHR %>%
+        filter(School==input$school_hr) %>%
+        select(Grade) 
+      
+      grades <- unique(homerooms$Grade)
+      
+      selectInput("grades_hrs", 
+                  "Choose Grade", 
+                  choices=as.character(grades),
+                  multiple=FALSE
+      )
+    }
   })
   
-  # can't plot a line with only one point (so need)
+  
+  output$home_rooms <- renderUI({
+    if(input$attSchoolvsHR=='hr') {
+
+      if(is.null(input$school_hr)) return()
+      if(is.null(input$grades_hrs)) return()
+
+      
+      homerooms<-DailyEnrollAttendByHR %>%
+        filter(School==input$school_hr,
+               Grade==input$grades_hrs) %>%
+        select(Home_Room) 
+      
+      homerooms <- unique(homerooms$Home_Room)
+      
+      selectInput("homerooms", 
+                  "Choose Home Rooms", 
+                  choices=as.character(homerooms),
+                  selected=as.character(homerooms),
+                  multiple=TRUE
+                  )
+    }
+  })
+  
+  
+  getDAE <- reactive({
+    
+    if(input$attSchoolvsHR!="hr"){
+      DAE<-DailyEnrollAttend.plotdata.melt %>%
+        filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2]))
+      
+      DAE.ytd.plot<-DailyEnrollAttend.plotdata.melt %>% as.data.frame %>%
+        cast(Date + Day + School + WeekOfShortDateLabel ~ variable) %>% 
+        as.data.frame %>%
+        group_by(School) %>% 
+        dplyr::mutate(Cum_Enrolled=order_by(Date, cumsum(Enrolled)), 
+                      Cum_Attended=order_by(Date, cumsum(Attended)),
+                      YTD_ADA = round(Cum_Attended/Cum_Enrolled*100,1),
+                      ADA=round(Attended/Enrolled*100,1)
+        ) 
+      
+      DAE.ytd.plot.filtered <- DAE.ytd.plot %>%
+        filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2])) %>%
+        arrange(School, Date) 
+      
+      DAE.weekly.ada <- DAE.ytd.plot.filtered  %>%
+        group_by(School, WeekOfShortDateLabel) %>%
+        dplyr::summarise(Weekly_ADA=round(sum(Attended)/sum(Enrolled)*100,1),
+                         y_pos=min(Attended)
+        ) 
+      
+      DAE.weekly.ytd.plot<- DAE.ytd.plot.filtered %>%
+        group_by(School, WeekOfShortDateLabel) %>%
+        filter(Day==max(Day)) %>%
+        select(School, WeekOfShortDateLabel, Day, YTD_ADA) %>%
+        inner_join(DAE.weekly.ada, by=c("School", "WeekOfShortDateLabel")) %>%
+        group_by(School) %>%
+        dplyr::mutate(y_pos=min(y_pos),
+                      x_pos=max(Day),
+                      threshold=ifelse(Weekly_ADA>=96, "Weekly ≥ 96%", "Weekly < 96")
+                      )
+      
+      
+      DAE.ytd.region<-DAE.ytd.plot %>% group_by(Date) %>%
+        dplyr::summarize(Enrolled=sum(Enrolled),
+                         Attended=sum(Attended),
+                         Cum_Enrolled=sum(Cum_Enrolled),
+                         Cum_Attended=sum(Cum_Attended)) %>%
+        dplyr::mutate(ADA=Attended/Enrolled*100,
+                      YTD_ADA=Cum_Attended/Cum_Enrolled*100)
+      
+      
+      
+      dt<-list(DAE=DAE,
+               DAE.weekly.ytd.plot=DAE.weekly.ytd.plot,
+               DAE.ytd.plot=DAE.ytd.plot,
+               DAE.ytd.region=DAE.ytd.region
+      )
+      
+      dt
+    } else {
+      if(is.null(input$homerooms)) return()
+      if(is.null(input$grades_hrs)) return()
+      if(is.null(input$school_hr)) return()
+      if(is.null(input$attDates)) return()
+
+      
+      DAE<-DailyEnrollAttend_HR.plotdata.melt %>% 
+        filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2]),
+               School==input$school_hr,
+               Grade==input$grades_hrs,
+               Home_Room %in% input$homerooms)
+      
+      DAE.ytd.plot<-DailyEnrollAttend_HR.plotdata.melt %>% 
+        as.data.frame %>%
+        cast(Date + Day + Grade + Home_Room + School + WeekOfShortDateLabel ~ variable) %>% 
+        as.data.frame %>%
+        group_by(School, Grade, Home_Room) %>% 
+        dplyr::mutate(Cum_Enrolled=order_by(Date, cumsum(Enrolled)), 
+                      Cum_Attended=order_by(Date, cumsum(Attended)),
+                      YTD_ADA = round(Cum_Attended/Cum_Enrolled*100,1),
+                      ADA=round(Attended/Enrolled*100,1)
+        ) 
+      
+      DAE.ytd.plot.filtered <- DAE.ytd.plot %>%
+        filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2]),
+               School==input$school_hr,
+               Grade==input$grades_hrs,
+               Home_Room %in% input$homerooms) %>%
+        arrange(School, Grade, Home_Room, Date) 
+      
+      DAE.weekly.ada <- DAE.ytd.plot.filtered  %>%
+        group_by(School, Grade, Home_Room, WeekOfShortDateLabel) %>%
+        dplyr::summarise(Weekly_ADA=round(sum(Attended)/sum(Enrolled)*100,1),
+                         y_pos=min(Attended)
+        ) 
+      
+      DAE.weekly.ytd.plot<- DAE.ytd.plot.filtered %>%
+        group_by(School, WeekOfShortDateLabel) %>%
+        filter(Day==max(Day)) %>%
+        select(School, Grade, Home_Room, WeekOfShortDateLabel, Day, YTD_ADA) %>%
+        inner_join(DAE.weekly.ada, by=c("School", "Grade", "Home_Room", "WeekOfShortDateLabel")) %>%
+        group_by(School, Grade, Home_Room) %>%
+        dplyr::mutate(y_pos=min(y_pos),
+                      x_pos=max(Day),
+                      threshold=ifelse(Weekly_ADA>=96, "Weekly ≥ 96%", "Weekly < 96")
+        )
+
+      DAE.ytd.region<-DAE.ytd.plot %>% group_by(Date) %>%
+        dplyr::summarize(Enrolled=sum(Enrolled),
+                         Attended=sum(Attended),
+                         Cum_Enrolled=sum(Cum_Enrolled),
+                         Cum_Attended=sum(Cum_Attended)) %>%
+        dplyr::mutate(ADA=Attended/Enrolled*100,
+                      YTD_ADA=Cum_Attended/Cum_Enrolled*100)
+
+    
+      
+      
+      dt<-list(DAE=DAE,
+               DAE.weekly.ytd.plot=DAE.weekly.ytd.plot,
+               DAE.ytd.plot=DAE.ytd.plot,
+               DAE.ytd.region=DAE.ytd.region
+      )
+      
+      dt
+    
+    }
+    
+    
+
+   
+   
+  })
+  
+ # output$test_table <- renderDataTable({getDAE()$DAE})
+  
+ # can't plot a line with only one point (so need)
   
   message("Build DAE plot")
   ggAttend <- reactive({
+    # Test that input's have populatied with data
+    # otherwise errors are displayed to user while shiny works through
+    # all the reactive functions.
+    
     withProgress(message = 'Graphing attendance  & enrollment', value = 0, {
       # Number of times we'll go through the loop
       #incProgress(.1, detail = "Counting Students") 
@@ -166,12 +312,27 @@ shinyServer(function(input, output, session) {
     
     
     # Determine if there is only one day worth of data
+    
+    if(input$attSchoolvsHR=="hr"){
+      
+      if(is.null(input$homerooms)) return()
+      if(is.null(input$grades_hrs)) return()
+      if(is.null(input$school_hr)) return()
+      
+      
+    
     DAE_max_days<- DAE %>%
       filter(max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel)
              )
     
+    
+    } else {
+      DAE_max_days<- DAE %>%
+        filter(max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel)
+        )
+    }
+    
     only_one_day <- length(unique(DAE_max_days$Date))==1
-   
     if(only_one_day){
       p <- ggplot(filter(DAE, Date<max(Date)), 
                   aes(x=Day, y=value))
@@ -205,10 +366,19 @@ shinyServer(function(input, output, session) {
                ) +
     scale_x_continuous(breaks = c(2,3,4,5,6), labels=c("M","T","W","R","F")) + #Change numberd week days to lettered
     scale_y_continuous("# of Students") + 
-    scale_colour_manual("", values=c("#439539", "black","#8D8685", "#E27425", "#439539")) +
+    scale_colour_manual("", values=c("#439539", "black","#8D8685", "#E27425", "#439539")) 
     #scale_alpha_manual("Weekly ADA >= 96%", values=c(.4,1)) +
-    facet_grid(School~WeekOfShortDateLabel, scales="free_y") +
-    theme_bw() + 
+    if(input$attSchoolvsHR!="hr"){
+      p <- p + facet_grid(School~WeekOfShortDateLabel, scales="free_y")   
+    } else {
+      
+      if(is.null(input$homerooms)) return()
+      if(is.null(input$grades_hrs)) return()
+      if(is.null(input$school_hr)) return()
+      
+      p <- p + facet_grid(Home_Room~WeekOfShortDateLabel, scales="free_y")
+    }
+    p <- p + theme_bw() + 
     theme(legend.position="bottom", 
           strip.text.x=element_text(size=12),
           strip.text.y=element_text(size=12),
@@ -221,11 +391,11 @@ shinyServer(function(input, output, session) {
   
   incProgress(.8, detail = "Constructing YTD graph")
   
-  DAE.ytd.plot<-DAE.list$DAE.ytd.plot %>% 
-    filter(School %in% input$traceSchools)
-  p2 <-
-    ggplot(DAE.ytd.plot,
-           aes(x=Date, y=ADA)) + 
+  if(input$attSchoolvsHR!="hr"){ 
+    DAE.ytd.plot<-DAE.list$DAE.ytd.plot %>% filter(School %in% input$traceSchools)
+    p2 <-
+      ggplot(DAE.ytd.plot,
+             aes(x=Date, y=ADA)) + 
       geom_hline(aes(yintercept=96), color="darkblue") +
       geom_point(aes(color=School)) + 
       geom_smooth(aes(y=YTD_ADA, color=School, size=Enrolled), se=F, span=.1) + 
@@ -240,12 +410,47 @@ shinyServer(function(input, output, session) {
                 size=4,
                 hjust=0, 
                 alpha=.6) +
-    geom_text(data=DAE.list$DAE.ytd.region %>% filter(Date==max(Date)), 
-              aes(y=YTD_ADA, label=round(YTD_ADA,1)), 
-              size=4,
-              hjust=0, 
-              alpha=.2) + 
+      geom_text(data=DAE.list$DAE.ytd.region %>% filter(Date==max(Date)), 
+                aes(y=YTD_ADA, label=round(YTD_ADA,1)), 
+                size=4,
+                hjust=0, 
+                alpha=.2) + 
       theme_bw()
+  } else {
+
+    if(is.null(input$school_hr)) return()
+    if(is.null(input$grades_hrs)) return()
+    if(is.null(input$homerooms)) return()
+    
+    DAE.ytd.plot<-DAE.list$DAE.ytd.plot %>% 
+      filter(School %in% input$school_hr,
+             Grade %in% input$grades_hrs,
+             Home_Room %in% input$homerooms)
+    p2 <-
+      ggplot(DAE.ytd.plot,
+             aes(x=Date, y=ADA)) + 
+      geom_hline(aes(yintercept=96), color="darkblue") +
+      geom_point(aes(color=Home_Room)) + 
+      geom_smooth(aes(y=YTD_ADA, color=Home_Room), se=F, span=.1) + 
+      geom_smooth(data=DAE.list$DAE.ytd.region, 
+                  aes(y=YTD_ADA,  size=Enrolled),
+                  se=F, 
+                  span=.1, 
+                  color="black",
+                  size=1) + 
+      geom_text(data=DAE.ytd.plot %>% filter(Date==max(Date)), 
+                aes(y=YTD_ADA, color=Home_Room, label=round(YTD_ADA,1)), 
+                size=4,
+                hjust=0, 
+                alpha=.6) +
+      geom_text(data=DAE.list$DAE.ytd.region %>% filter(Date==max(Date)), 
+                aes(y=YTD_ADA, label=round(YTD_ADA,1)), 
+                size=4,
+                hjust=0, 
+                alpha=.2) + 
+      theme_bw()
+  }
+ 
   
   
   incProgress(1, detail = "Drawing graph")
@@ -263,10 +468,33 @@ shinyServer(function(input, output, session) {
   
   message("Render DEA plot")
   output$plotAttendEnroll <- renderPlot({
+    if(input$attSchoolvsHR=="hr"){
+      
+      if(is.null(input$homerooms) |
+           is.null(input$grades_hrs) |
+           is.null(input$school_hr)
+         ) {
+        return()
+      } else {ggAttend()$p}
+
+      
+    } else {
       ggAttend()$p
+    }
+
     })
   output$plotYTDAttend <- renderPlot({
-    ggAttend()$p2 
+    if(input$attSchoolvsHR=="hr"){
+      
+      if(is.null(input$homerooms)) return()
+      if(is.null(input$grades_hrs)) return()
+      if(is.null(input$school_hr)) return()
+
+      ggAttend()$p2 
+      } else {
+      ggAttend()$p2 
+    }
+    
     }) 
   
   
@@ -275,32 +503,70 @@ shinyServer(function(input, output, session) {
   
   # Daily Attend Table ####
   message('Munge  daily enrollement/attendence data table')
-  DailyEnrollAttend.dt <- DailyEnrollAttend %>%
-    mutate(PctAtt=round(PctPresent*100,1)) %>%
-    select(School,
-           Date,
-           Enrolled,
-           Present,
-           Absent,
-           "% Attending" = PctAtt)
+  DAE_dt <- reactive({
+    DAE.list<-getDAE()
+    DAE<-DAE.list$DAE.ytd.plot
+    if(input$attSchoolvsHR=="hr"){
+      #if(is.null(input$homerooms)) return()
+      #if(is.null(input$grades_hrs)) return()
+      #if(is.null(input$school_hr)) return()
+      x<-select(DAE,
+                Date, 
+                Week = WeekOfShortDateLabel,
+                Grade,
+               "Home Room" = Home_Room,
+                Attended,
+                Enrolled,
+                ADA,
+               "YTD ADA"= YTD_ADA
+               )
+    } else {
+    x <-  select(DAE,
+      Date, 
+      Week = WeekOfShortDateLabel,
+      Attended,
+      Enrolled,
+      ADA,
+      "YTD ADA"= YTD_ADA
+   ) 
+ }
+ x
+
+ })
          
-  
   #setnames(DailyEnrollAttend.dt, "PctAtt", "% Attending")
   message('Render  daily enrollement/attendence data table')
-  output$daily_attend <- renderDataTable({filter(DailyEnrollAttend.dt, 
-                                                 School %in% input$schools)
-                                          }, 
-                                         options = list(bSortClasses = TRUE,
-                                                        aLengthMenu = list(c(5,25, 50, 100, -1), 
-                                                                           list(5,25,50,100,'All')
-                                                                           ),
-                                                        iDisplayLength = 50,
-                                                        "sDom"='T<"clear">lfrtip',
-                                                        "oTableTools"=list(
-                                                          "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
-                                                          )
-                                                        )
+  output$daily_attend <- renderDataTable(DAE_dt(),
+                                         options = list(
+                                           lengthMenu = list(c(5, 15, -1), 
+                                                             c('5', '15', '50', 'All')
+                                                             ),
+                                           pageLength = 20)
                                          )
+                                                 
+                                                
+                                           #DAE# %>%
+                                            #mutate(PctAtt=round(PctPresent*100,1)) %>%
+                                            #select(School,
+                                            #       Date,
+                                            #       Enrolled,
+                                            #       Present,
+                                            #       Absent,
+                                            #       "% Attending" = PctAtt)
+                                              #filter(DailyEnrollAttend.dt, 
+                                              #   School %in% input$schools)
+                                          #}, 
+                                         #options = list(bSortClasses = TRUE,
+                                        #                aLengthMenu = list(c(5,25, 50, 100, -1), 
+                                         #                                  list(5,25,50,100,'All')
+                                          #                                 ),
+                                           #             iDisplayLength = 50,
+                                            #            "sDom"='T<"clear">lfrtip',
+                                             #           "oTableTools"=list(
+                                              #            "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
+                                                          #)
+                                                        #)
+                                         #)
   
   # Weekly & YTD ADA ####
   AttRateByWeekBySchool.table<-xtable(arrange(AttRateByWeekBySchool.table, 

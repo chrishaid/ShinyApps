@@ -3,7 +3,7 @@
 # report) data analysis project
 
 library(shiny)
-library(shinysky)
+#library(shinysky)
 
 
 lastXweeks<-ymd(as.character(floor_date(today() -weeks(6), 
@@ -21,10 +21,15 @@ update_time_stamp<-lubridate::stamp("Attendance data last updated on Tuesday, Se
 shinyUI(
   bootstrapPage(
     tags$head( 
-      tags$link(href='static/css/shinyprogress.css', rel="stylesheet", type="text/css"), 
-      tags$link(href='static/css/dataTables.tableTools.css', rel="stylesheet", type="text/css"), 
-      tags$script(src='static/js/jquery.dataTables.js'),
-      tags$script(src='static/js/dataTables.tableTools.js')
+      #tags$link(href='static/css/shinyprogress.css', rel="stylesheet", type="text/css"), 
+      #tags$link(href='static/css/dataTables.tableTools.css', rel="stylesheet", type="text/css"), 
+      #tags$script(src='static/js/jquery.dataTables.js'),
+      #tags$script(src='static/js/dataTables.tableTools.js'),
+      # Following tags needed to surpress errors that are caused be reactives
+      # loading too quickly.  During debugging it should be commented out
+      tags$style(type="text/css",
+                 ".shiny-output-error { visibility: hidden; }",
+                 ".shiny-output-error:before { visibility: hidden; }") #
     ), 
     div(class="container-fluid",
         br(),
@@ -36,58 +41,76 @@ shinyUI(
                    tabsetPanel(
                      tabPanel(title="Daily",
                               h4("Daily Enrollment and Attendance by School"),
-                              tabsetPanel(
-                                tabPanel(title="Enrollment & Attendance", 
-                                         dateRangeInput("attDates", 
-                                                        "Select Dates:",
-                                                        start=last6weeks,
-                                                        end=thisweek,
-                                                        min=firstweek,
-                                                        max=thisweek
-                                                        ),
-                                         plotOutput("plotAttendEnroll",
-                                                    height="600px")
-                                         ),
-                                tabPanel("ADA Trace Graph",
-                                         h4("YTD ADA"),
-                                         em("Black traces regional average daily attendance."),
-                                         selectInput(inputId = "traceSchools",
-                                                     label =  "Choose Schools:",
+                              fluidRow(
+                                column(4,
+                                       dateRangeInput("attDates", 
+                                                      "Select Dates:",
+                                                      start=last6weeks,
+                                                      end=thisweek,
+                                                      min=firstweek,
+                                                      max=thisweek
+                                       )
+                                ),
+                                column(2,
+                                       radioButtons("attSchoolvsHR",
+                                                    "Show attendance by:",
+                                                    c("School"="school",
+                                                      "Home Room" = "hr"),
+                                                    select="school"
+                                       )
+                                ),
+                                column(2, 
+                                       conditionalPanel(
+                                         condition="input.attSchoolvsHR == 'hr'",
+                                         selectInput("school_hr",
+                                                     "Select School",
                                                      choices = c("KAP",
                                                                  "KAMS",
                                                                  "KCCP",
                                                                  "KBCP"),
-                                                     multiple=TRUE,
-                                                     selected=c("KAP",
-                                                                "KAMS",
-                                                                "KCCP",
-                                                                "KBCP")
+                                                     multiple=FALSE,
+                                                     selected="KAP"
+                                         )
+                                       )
+                                ),
+                                column(2,uiOutput("grades_hrs")),
+                                column(2, uiOutput("home_rooms"))
+                              ),
+                              tabsetPanel(
+                                tabPanel(title="Enrollment & Attendance", 
+                                         fluidRow(
+                                           column(12, 
+                                                  plotOutput("plotAttendEnroll",
+                                                            height="600px")
+                                                  )
+                                           )
+                                         ),
+                                tabPanel("ADA Trace Graph",
+                                         h4("YTD ADA"),
+                                         em("Black traces regional average daily attendance."),
+                                         conditionalPanel(
+                                           condition="input.attSchoolvsHR == 'school'",
+                                           selectInput(inputId = "traceSchools",
+                                                       label =  "Choose Schools:",
+                                                       choices = c("KAP",
+                                                                   "KAMS",
+                                                                   "KCCP",
+                                                                   "KBCP"),
+                                                       multiple=TRUE,
+                                                       selected=c("KAP",
+                                                                  "KAMS",
+                                                                  "KCCP",
+                                                                  "KBCP")
+                                                       )
                                                     ),
                                          plotOutput("plotYTDAttend")
                                          ),
                                         
-                                tabPanel(title="Table",
-                                         selectInput('schools', 
-                                                            'Select School:', 
-                                                            unique(DailyEnrollAttend$School),
-                                                            selected = "KAMS", 
-                                                            multiple=TRUE),
-                                         div(class="table-condensed", 
-                                             dataTableOutput("daily_attend")
-                                             )
+                                tabPanel(title="Table",                                      
+                                         dataTableOutput("daily_attend")    
                                          )
                                 )
                               ),
-#                      tabPanel(title = "YTD PowerSchool vs IMPACT",
-#                               h4("Powerschool vs. IMPACT* YTD Attendance"),
-#                               htmlOutput("impact"),
-#                               p(tags$small("*IMPACT data is only updated on the first day of each school week. ",  
-#                                            "Consequently, the ",
-#                                            strong("Difference"),
-#                                            "column will show wider discrepencies as the week progresses"
-#                               )
-#                               )
-#                      ),
                      tabPanel(title="Weekly & YTD",
                               h4("YTD and Weekly Average Daily Attendance"),
                               br(),

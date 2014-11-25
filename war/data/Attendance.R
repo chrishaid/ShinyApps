@@ -36,6 +36,7 @@ sql.statement<-paste("SELECT
                       ELSE 0
                      END AS Currently_Enrolled,
                      m.Enrolled,
+                     m.home_room,
                      a.Att_Code,
                      a.Description as AttDescr,
                      a.Presence_Status_CD,
@@ -53,7 +54,8 @@ sql.statement<-paste("SELECT
                      s.STUDENT_NUMBER,
                      s.LASTFIRST, 
                      s.enroll_status,
-                     1 as Enrolled  
+                     1 as Enrolled,
+                     s.home_room
                      FROM PS_Membership_Defaults psmd
                      LEFT JOIN students s ON psmd.StudentID = s.id
                      Where 	calendardate >= TO_DATE('",date.first,"','yyyy-mm-dd')

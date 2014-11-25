@@ -8,11 +8,12 @@ Attendance <- Attendance %>%
   mutate(School=school_abbrev(SCHOOLID),
          School=factor(School, levels=c("KAP", "KAMS", "KCCP", "KBCP")),
          Grade=factor(GRADE_LEVEL, 
-                            levels=c(0,1,2,3,5,6,7,8),
-                            labels=c("K",1,2,3,5,6,7,8))
+                            levels=c(0,1,2,3,4,5,6,7,8),
+                            labels=c("K",1,2,3,4,5,6,7,8))
          ) %>% 
   select(SchoolID=SCHOOLID,
          Grade,
+         Home_Room=HOME_ROOM,
          Date=CALENDARDATE,
          StudentID=STUDENTID,
          Student=LASTFIRST,

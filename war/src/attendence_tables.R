@@ -15,16 +15,26 @@ DailyEnrollAttendByGrade <-  Attendance %>%
 DailyEnrollAttend <- DailyEnrollAttendByGrade %>%
   summarize(Enrolled=sum(Enrolled), Absent=sum(Absent))
 
+# By HR
+
+DailyEnrollAttendByHR <-  Attendance %>% 
+  data.frame %>%
+  group_by(Date, School, Grade, Home_Room) %>%
+  summarize(Enrolled=sum(Enrolled), Absent=sum(Absent))
+
+
+
 
 DEA.list<-list(DailyEnrollAttend=DailyEnrollAttend, 
-               DailyEnrollAttendByGrade=DailyEnrollAttendByGrade)
+               DailyEnrollAttendByGrade=DailyEnrollAttendByGrade,
+               DailyEnrollAttendByHR=DailyEnrollAttendByHR)
 
 DEA.list<-lapply(DEA.list, function(x) x<- prep_Att_Summary_Tables(x))
 
 
 DailyEnrollAttend<-DEA.list$DailyEnrollAttend
 DailyEnrollAttendByGrade<-DEA.list$DailyEnrollAttendByGrade
-
+DailyEnrollAttendByHR<-DEA.list$DailyEnrollAttendByHR
 
 
 #### Calculate Attendance rate by week by school ####
@@ -136,4 +146,11 @@ AttByStudentBySchool <- left_join(AttByStudentBySchool, ADA_28, by="StudentID") 
 
 
 #setnames(AttByStudentBySchool, c("School", "Grade", "Student","ADA", "ADA (prior month)"  ,"Absences"))
+
+
+
+
+
+
+
 
