@@ -1,7 +1,7 @@
 # Registration and Applicatons Shiny US
 
 library(shiny)
-library(shinysky)
+#library(shinysky)
 
 
 shinyUI(
@@ -15,6 +15,14 @@ shinyUI(
         tabsetPanel(#type="pills",
           tabPanel(title="Applications",
                    h4("YTD Applications"),
+                   fluidRow(column(7,
+                                   div(class="alert alert-info",
+                                     checkboxInput("focusGrades",
+                                                 "Show Focus Grades Only",
+                                                 TRUE)
+                                     )
+                                   )
+                            ),
                    fluidRow(
                      
                      column(5, 
