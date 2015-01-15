@@ -1,9 +1,10 @@
 # Munging scricpt for map.all
 
 #fix 2010-11 data which has kindergarten at KAMS
-map.all[map.all$SchoolName=="KIPP Ascend Middle School" & map.all$Grade<5,"SchoolName"]<-"KIPP Ascend Primary School"
+map.all.silo[map.all.silo$SchoolName=="KIPP Ascend Middle School" & map.all.silo$Grade<5,"SchoolName"]<-"KIPP Ascend Primary School"
 
-map.all<-map.all %>% 
+
+map.all<-map.all.silo %>% 
   mutate(Season=str_extract(TermName, 
                             "[[:alpha:]]+"), 
          Year1=as.integer(str_extract(TermName, 
@@ -12,7 +13,9 @@ map.all<-map.all %>%
                     "\\2", 
                     TermName)),
          SY=paste(Year1, Year2, sep="-"),
-         CohortYear=(12-Grade)+as.numeric(Year2)
+         Grade=ifelse(Grade=="K", 0, as.integer(Grade)),
+         Grade=as.integer(Grade),
+         CohortYear=(12-Grade)+Year2
   ) %>%
   filter(Year1 >= 2010 & GrowthMeasureYN=='TRUE') %>%
   mutate(SchoolInitials   = abbrev(SchoolName, list(old="KAPS", new="KAP")), 

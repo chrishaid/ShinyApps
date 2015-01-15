@@ -58,7 +58,7 @@ if("no" %in% args[2]){
   message("Not importing map.all")
   
 } else {
-  source('map.all.R')
+  source('map.all.silo.R')
   message('Preprocess Data')
   #source('../munge/01-All_Schools.R')
   source('../munge/03-map_all.R')
