@@ -18,7 +18,7 @@ grade.summary<-dplyr::summarise(current.roster, N=n())
 
 
 current.term<-
-  dplyr::filter(map.all, TermName=="Fall 2014-2015") %.% 
+  dplyr::filter(map.all, TermName=="Winter 2014-2015") %.% 
   mutate(School=abbrev(SchoolName, exceptions=list(old="KAPS", new="KAP"))
          ) %>% 
   group_by(School, Grade, MeasurementScale)
