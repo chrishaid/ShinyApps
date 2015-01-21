@@ -9,8 +9,9 @@ subjs <-  list("Mathematics",
                )
 grades <- c(0:8)
 
-seasons<-c("Fall - Spring",
+seasons<-c("Spring - Winter",
            "Spring - Spring",
+           "Fall - Spring",
            "Fall - Winter",
            "Winter - Spring",
            "Fall - Fall")

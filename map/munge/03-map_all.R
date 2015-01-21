@@ -1,6 +1,7 @@
 # Munging scricpt for map.all
 
 #fix 2010-11 data which has kindergarten at KAMS
+
 map.all.silo[map.all.silo$SchoolName=="KIPP Ascend Middle School" & map.all.silo$Grade<5,"SchoolName"]<-"KIPP Ascend Primary School"
 
 
@@ -15,7 +16,10 @@ map.all<-map.all.silo %>%
          SY=paste(Year1, Year2, sep="-"),
          Grade=ifelse(Grade=="K", 0, as.integer(Grade)),
          Grade=as.integer(Grade),
-         CohortYear=(12-Grade)+Year2
+         CohortYear=(12-Grade)+Year2,
+         MeasurementScale = ifelse(grepl("General Science", MeasurementScale), 
+                                   "General Science",
+                                   MeasurementScale)
   ) %>%
   filter(Year1 >= 2010 & GrowthMeasureYN=='TRUE') %>%
   mutate(SchoolInitials   = abbrev(SchoolName, list(old="KAPS", new="KAP")), 
@@ -36,7 +40,7 @@ map.all<-cbind(map.all,
 years<-unique(map.all$Year2)
 
 map.SS<-rbindlist(lapply(years, 
-                         s2s_match, 
+                         mapvisuals::s2s_match, 
                          .data=map.all, 
                          season1="Spring", 
                          season2="Spring", 
@@ -45,7 +49,7 @@ map.SS<-rbindlist(lapply(years,
                          )
                   )
 map.FS<-rbindlist(lapply(years, 
-                         s2s_match,
+                         mapvisuals::s2s_match,
                          .data=map.all, 
                          season1="Fall", 
                          season2="Spring", 
@@ -54,7 +58,7 @@ map.FS<-rbindlist(lapply(years,
                                  )
                           )
 map.FW<-rbindlist(lapply(years, 
-                         s2s_match, 
+                         mapvisuals::s2s_match, 
                         .data=map.all, 
                          season1="Fall", 
                          season2="Winter", 
@@ -63,7 +67,7 @@ map.FW<-rbindlist(lapply(years,
                                )
                         )
 map.WS<-rbindlist(lapply(years,
-                         s2s_match, 
+                         mapvisuals::s2s_match, 
                          .data=map.all, 
                          season1="Winter", 
                          season2="Spring", 
@@ -72,7 +76,7 @@ map.WS<-rbindlist(lapply(years,
                          )
                   )
 map.FF<-rbindlist(lapply(years, 
-                         s2s_match, 
+                         mapvisuals::s2s_match, 
                          .data=map.all, 
                          season1="Fall", 
                          season2="Fall", 
@@ -81,9 +85,19 @@ map.FF<-rbindlist(lapply(years,
                          )
                   )
 
-map.all.growth<-rbindlist(list(map.SS, map.FS, map.FW, map.WS, map.FF))
+map.SW<-rbindlist(lapply(years, 
+                         mapvisuals::s2s_match, 
+                         .data=map.all, 
+                         season1="Spring", 
+                         season2="Winter", 
+                         typical.growth=T,
+                         college.ready=T
+                         )
+                  )
 
-rm(map.SS, map.FS, map.FW, map.WS, map.FF)
+map.all.growth<-rbindlist(list(map.SS, map.FS, map.FW, map.WS, map.FF, map.SW))
+
+rm(map.SS, map.FS, map.FW, map.WS, map.FF, map.SW)
 
 map.all.growth.sum<-map.all.growth[,list("N (both seasons)"= .N, 
                     "# >= Typical" = sum(MetTypical),  
