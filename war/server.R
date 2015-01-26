@@ -327,10 +327,13 @@ shinyServer(function(input, output, session) {
       filter(max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel)
              )
     
+    a_unqiue_school <- unique(DAE$School)[1]
+    
     DAE_single_day_week <- 
       DAE %>% 
-      dplyr::filter(variable=="Enrolled", School=="KAMS") %>%
-      dplyr::select(Date, WeekOfShortDateLabel) %>%
+    #  dplyr::filter(variable=="Enrolled", School==a_unqiue_school) %>%
+      dplyr::select(Date, WeekOfShortDateLabel) %>% 
+      unique %>%
       dplyr::count(WeekOfShortDateLabel) %>%
       filter(n<2)
     
@@ -343,10 +346,13 @@ shinyServer(function(input, output, session) {
         filter(max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel)
         )
       
+      a_unqiue_school <- unique(DAE$School)[1]
+      
       DAE_single_day_week <- 
         DAE %>% 
-        dplyr::filter(variable=="Enrolled", School=="KAMS") %>%
+        #dplyr::filter(variable=="Enrolled", School==a_unqiue_school) %>%
         dplyr::select(Date, WeekOfShortDateLabel) %>%
+        unique %>%
         dplyr::count(WeekOfShortDateLabel) %>%
         filter(n<2)
       
