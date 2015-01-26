@@ -140,7 +140,7 @@ shinyUI(fluidPage(
                       selectInput(inputId="selectSummSY", 
                                   label="Year(s) Selected:",
                                   choices=sys,
-                                  selected="2013-2014",
+                                  selected="2014-2015",
                                   #type="select",
                                   multiple=TRUE
                                   )
@@ -149,7 +149,7 @@ shinyUI(fluidPage(
                       selectInput(inputId="selectSummSeason", 
                                   label="Growth Season(s) Selected:",
                                   choices=seasons,
-                                  selected="Fall - Spring",
+                                  selected="Spring - Winter",
                                   #type="select",
                                   multiple=TRUE
                                   )
@@ -177,7 +177,7 @@ shinyUI(fluidPage(
         column(3,
                selectInput(inputId="selectSummGrades", 
                            label="Grade(s) Selected:",
-                           choices=c(0:3,5:8),
+                           choices=grades,
                            selected=grades,
                            #type="select",
                            multiple=TRUE
