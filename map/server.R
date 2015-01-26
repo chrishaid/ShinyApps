@@ -111,56 +111,6 @@ shinyServer(function(input, output, session) {
   })
   
    
-  # Waterfalls
-#   output$main_plot <- renderPlot({
-#    
-#     
-#     log("Plotting MAP Results...")
-#     
-#     
-#     ptitle <- paste0(input$school, 
-#                      " 2013-14 Fall to Winter MAP Scores ",
-#                      input$grade,
-#                      " ",
-#                      input$subject, 
-#                      "\nFall and Spring RIT Scores vs Expected Growth and College Ready Growth\nby Fall Quartile")
-#    
-#     # using try() catch an error because renderPlot trys to execute plot_waterfall
-#     #  before the observer recieves all data from the renderUIs for school, grade, subjectx
-#     
-#     
-#     
-#     withProgress(session, min=1, max=15, {
-#       
-#       
-#       setProgress(message = 'Chasing Waterfalls...',
-#                   detail = 'This may take a while...')
-#       
-#       setProgress(value = 10, detail="Subsetting Data")
-#     
-#     
-#     p<-try(plot_waterfall(getData(), 
-#                       ptitle, 
-#                       season1="Fall", 
-#                       season2="Winter",
-#                       labxpos=100, 
-#                       minx=95,
-#                       alp=.6,
-#                       text_factor=1.25
-#                       ),
-#            silent=TRUE)
-#     
-#     
-#       
-#       print(p)
-#       
-#   
-#       
-#       setProgress(value=15, detail="Drawing the waterfalls!")
-#     }) 
-#   }
-# )
-
 # Main Table ####
 output$main_table <- renderDataTable({
    

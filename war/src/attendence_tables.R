@@ -9,18 +9,18 @@
 DailyEnrollAttendByGrade <-  Attendance %>% 
   data.frame %>%
   group_by(Date, School, Grade) %>%
-  summarize(Enrolled=sum(Enrolled), Absent=sum(Absent))
+  dplyr::summarize(Enrolled=sum(Enrolled), Absent=sum(Absent))
 
 # By School
 DailyEnrollAttend <- DailyEnrollAttendByGrade %>%
-  summarize(Enrolled=sum(Enrolled), Absent=sum(Absent))
+  dplyr::summarize(Enrolled=sum(Enrolled), Absent=sum(Absent))
 
 # By HR
 
 DailyEnrollAttendByHR <-  Attendance %>% 
   data.frame %>%
   group_by(Date, School, Grade, Home_Room) %>%
-  summarize(Enrolled=sum(Enrolled), Absent=sum(Absent))
+  dplyr::summarize(Enrolled=sum(Enrolled), Absent=sum(Absent))
 
 
 
@@ -41,12 +41,12 @@ DailyEnrollAttendByHR<-DEA.list$DailyEnrollAttendByHR
 
 AttRateByWeekBySchool <- DailyEnrollAttend %>%
   group_by(School, WeekOfShortDateLabel) %>%
-  summarize(AttRate=sum(Present)/sum(Enrolled)*100) %>%
+  dplyr::summarize(AttRate=sum(Present)/sum(Enrolled)*100) %>%
   arrange(School)
 
 AttRateYTDBySchool <- DailyEnrollAttend %>%
   group_by(School) %>%
-  summarize(AttRate=sum(Present)/sum(Enrolled)*100) %>%
+  dplyr::summarize(AttRate=sum(Present)/sum(Enrolled)*100) %>%
   mutate(WeekOfShortLabel="YTD Each School") %>%
   arrange(School)
 
@@ -94,7 +94,7 @@ names(AttRateByWeekBySchool.table)[names(AttRateByWeekBySchool.table)=="WeekOfSh
 AttByStudentBySchool<-Attendance %>% data.frame %>%
   filter(CurrentStatus==1) %>%
   group_by(StudentID,Student, School, Grade) %>%
-  summarize(Absences=sum(Absent), 
+  dplyr::summarize(Absences=sum(Absent), 
             ADA=round((1-(sum(Absent)/sum(Enrolled)))*100,1)) %>%
   group_by(School, Grade) %>% data.frame %>%
   mutate(N=n(), 
@@ -123,7 +123,7 @@ AttByStudentBySchool<-Attendance %>% data.frame %>%
 ADA_28<- Attendance %>% data.frame %>%
   dplyr::filter(Date>=ymd(as.character(today() - days(28)))) %>%
   group_by(StudentID) %>%
-  summarize( 
+  dplyr::summarize( 
          ADA_28=round(100*(1-(sum(Absent)/n())),1)) %>%
   select(StudentID, ADA_28)
 

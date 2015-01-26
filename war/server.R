@@ -169,7 +169,8 @@ shinyServer(function(input, output, session) {
                       Cum_Attended=order_by(Date, cumsum(Attended)),
                       YTD_ADA = round(Cum_Attended/Cum_Enrolled*100,1),
                       ADA=round(Attended/Enrolled*100,1)
-        ) 
+        )  %>%
+        filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2]))
       
       DAE.ytd.plot.filtered <- DAE.ytd.plot %>%
         filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2])) %>%
@@ -199,7 +200,8 @@ shinyServer(function(input, output, session) {
                          Cum_Enrolled=sum(Cum_Enrolled),
                          Cum_Attended=sum(Cum_Attended)) %>%
         dplyr::mutate(ADA=Attended/Enrolled*100,
-                      YTD_ADA=Cum_Attended/Cum_Enrolled*100)
+                      YTD_ADA=Cum_Attended/Cum_Enrolled*100) %>%
+        filter(Date >= ymd(input$attDates[1]) & Date <= ymd(input$attDates[2]))
       
       
       
@@ -325,17 +327,43 @@ shinyServer(function(input, output, session) {
       filter(max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel)
              )
     
+    DAE_single_day_week <- 
+      DAE %>% 
+      dplyr::filter(variable=="Enrolled", School=="KAMS") %>%
+      dplyr::select(Date, WeekOfShortDateLabel) %>%
+      dplyr::count(WeekOfShortDateLabel) %>%
+      filter(n<2)
+    
+    DAE_multi_day_weeks <- anti_join(DAE, 
+                                     DAE_single_day_week, 
+                                     by="WeekOfShortDateLabel")
     
     } else {
       DAE_max_days<- DAE %>%
         filter(max(as.numeric(WeekOfShortDateLabel))==as.numeric(WeekOfShortDateLabel)
         )
+      
+      DAE_single_day_week <- 
+        DAE %>% 
+        dplyr::filter(variable=="Enrolled", School=="KAMS") %>%
+        dplyr::select(Date, WeekOfShortDateLabel) %>%
+        dplyr::count(WeekOfShortDateLabel) %>%
+        filter(n<2)
+      
+      DAE_multi_day_weeks <- anti_join(DAE, 
+                                       DAE_single_day_week, 
+                                       by="WeekOfShortDateLabel")
+      
     }
     
-    only_one_day <- length(unique(DAE_max_days$Date))==1
-    if(only_one_day){
-      p <- ggplot(filter(DAE, Date<max(Date)), 
-                  aes(x=Day, y=value))
+
+    
+    
+    single_day_weeks <- nrow(DAE_single_day_week)>0
+    #only_one_day <- length(unique(DAE_max_days$Date))==1
+    
+    if(single_day_weeks){
+      p <- ggplot(DAE_multi_day_weeks, aes(x=Day, y=value))
       } else {
         p <- ggplot(DAE, aes(x=Day, y=value))
       }
@@ -398,11 +426,11 @@ shinyServer(function(input, output, session) {
              aes(x=Date, y=ADA)) + 
       geom_hline(aes(yintercept=96), color="darkblue") +
       geom_point(aes(color=School)) + 
-      geom_smooth(aes(y=YTD_ADA, color=School, size=Enrolled), se=F, span=.1) + 
+      geom_smooth(aes(y=YTD_ADA, color=School), se=F, span=1) + 
       geom_smooth(data=DAE.list$DAE.ytd.region, 
                   aes(y=YTD_ADA, color=School, size=Enrolled),
                   se=F, 
-                  span=.1, 
+                  span=1, 
                   color="black",
                   size=1) + 
       geom_text(data=DAE.ytd.plot %>% filter(Date==max(Date)), 
