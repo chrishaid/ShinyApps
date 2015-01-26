@@ -330,7 +330,7 @@ output$dashboard_panel <- renderPlot({
                                           Subject %in% input$selectDBSubject & 
                                           School!="Region" & 
                                           N.S1.S2>=10 &
-                                        Class>=2018], 
+                                        Class>=2019], 
                    aes_string(x='Grade', 
                               y=paste0(y.actual,'*100')
                    )

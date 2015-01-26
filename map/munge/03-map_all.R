@@ -2,7 +2,7 @@
 
 #fix 2010-11 data which has kindergarten at KAMS
 
-map.all.silo[map.all.silo$SchoolName=="KIPP Ascend Middle School" & map.all.silo$Grade<5,"SchoolName"]<-"KIPP Ascend Primary School"
+map.all.silo[map.all.silo$SchoolName=="KIPP Ascend Middle School" & (map.all.silo$Grade<5|map.all.silo$Grade=="K"),"SchoolName"]<-"KIPP Ascend Primary School"
 
 
 map.all<-map.all.silo %>% 
@@ -16,7 +16,7 @@ map.all<-map.all.silo %>%
          SY=paste(Year1, Year2, sep="-"),
          Grade=ifelse(Grade=="K", 0, as.integer(Grade)),
          Grade=as.integer(Grade),
-         CohortYear=(12-Grade)+Year2,
+         CohortYear=Year2+(12-Grade),
          MeasurementScale = ifelse(grepl("General Science", MeasurementScale), 
                                    "General Science",
                                    MeasurementScale)
@@ -117,12 +117,12 @@ map.all.growth.sum<-map.all.growth[,list("N (both seasons)"= .N,
                             GrowthSeason, 
                             SchoolInitials, 
                             Grade.2, 
-                            CohortYear,
+                            CohortYear.2,
                             MeasurementScale)
                     ]
 
 setnames(map.all.growth.sum, 
-         c("SchoolInitials", "Grade.2", "MeasurementScale", "SY.2", "CohortYear"),
+         c("SchoolInitials", "Grade.2", "MeasurementScale", "SY.2", "CohortYear.2"),
          c("School", "Grade", "Subject", "SY", "Class")
          )
 
@@ -144,12 +144,12 @@ map.all.growth.sum.reg<-map.all.growth[,list("School"="Region",
                                        by=list(SY.2, 
                                                GrowthSeason, 
                                                Grade.2, 
-                                               CohortYear,
+                                               CohortYear.2,
                                                MeasurementScale)
                                        ]
 
 setnames(map.all.growth.sum.reg, 
-         c("Grade.2", "MeasurementScale", "SY.2", "CohortYear"),
+         c("Grade.2", "MeasurementScale", "SY.2", "CohortYear.2"),
          c("Grade", "Subject", "SY", "Class")
          )
 
@@ -185,13 +185,14 @@ map.all.growth.sum.p<-na.omit(map.all.growth.sum.p)
 
 require(dplyr)
 message("Class by current Grade")
-class_current_grade<-group_by(map.all.growth.sum.p, 
-                              Class) %>% 
-  dplyr::summarize(Grade=max(Grade)) %>% 
+class_current_grade<-map.all.growth.sum.p%>%
+  group_by(Class) %>% 
+  dplyr::summarize(Grade=max(Grade), N=n()) %>% 
   mutate(Class2=paste0(Class, 
                        "\n(Current grade: ", 
                        Grade, ")")
          ) %>%
+  filter(N>20) %>%
   select(Class, Class2)
 
 map.all.growth.sum.p<-left_join(map.all.growth.sum.p, 
