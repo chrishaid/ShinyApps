@@ -44,7 +44,7 @@ message("Appending Impact Data")
 impact<-cbind(ps.all, round(impact[2],1))
 
 message("Calculating diff between impact data and PS data")
-impact$Difference<-impact$Impact - impact$PowerSchool
+impact$Difference<-impact$IMPACT - impact$PowerSchool
 
 message("Staring shiny server portion of code")
 #### Shiny Server output code ####
