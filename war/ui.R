@@ -111,6 +111,11 @@ shinyUI(
                                          )
                                 )
                               ),
+                     tabPanel(title="IMPACT v. PS",
+                              h4("IMPACT versus PowerSchool Attendance"),
+                              br(),
+                              htmlOutput("impact")
+                     ),
                      tabPanel(title="Weekly & YTD",
                               h4("YTD and Weekly Average Daily Attendance"),
                               br(),
