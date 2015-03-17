@@ -113,6 +113,19 @@ shinyUI(
                               ),
                      tabPanel(title="IMPACT v. PS",
                               h4("IMPACT versus PowerSchool Attendance"),
+                              div(class="alert alert-danger",
+                                  p("As of 3/17/2015 IMPACT attendance for KAP and KACP ",
+                                    strong("excludes Kindergarten"),
+                                    ". However, PowerSchool attendance figures ",
+                                    strong("include Kindergarten"),
+                                    ". Kindergarten is excluded because that ",
+                                    "grade is currently on a different charter than grades 1-8,",
+                                    "and will be excluded in SQRP calculatoins, which use IMPACT data. "
+                                  ),
+                                  br(),
+                                  p("We will break out IMPACT and PowerSchool ADA for ", 
+                                    "Kindergarten separately in a forthcoming update to IDEA.")
+                              ),
                               br(),
                               htmlOutput("impact")
                      ),

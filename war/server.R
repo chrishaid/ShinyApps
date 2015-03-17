@@ -12,7 +12,8 @@ addResourcePath('static', '/var/www/')
 # CPS Impact ####
 message('Get IMPACT data from google spreadsheet')
 googurl <- getURL(read.dcf('config//ps.dcf', fields='GOOG')[1])
-impact <- read.csv(textConnection(googurl))
+impact <- read.csv(textConnection(googurl)) %>%
+  dplyr::filter(School != "KAP (K)")
 
 # PowerSchool/Impact Summary Table ####
 message('Create PowerSchool/Impact summary table(s)')
