@@ -10,7 +10,7 @@ message('Get recruitement and application data from google spreadsheet')
 apps.googurl <- getURL(read.dcf('config//ps.dcf', fields='APPS')[1])
 apps <- read.csv(textConnection(apps.googurl))
 
-apps<-apps %>% mutate(Focus = ((Schl=="KAP" & Gr =="K") |
+apps<-apps %>% mutate(Focus = ((Schl=="KAP" & Gr =="5") |
                         (Schl=="KAMS" & Gr== "6") | 
                         (Schl=="KAMS" & Gr== "6") |
                         (Schl=="KCCP" & Gr %in% c("5","6")) |
