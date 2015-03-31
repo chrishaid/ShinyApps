@@ -51,12 +51,7 @@ shinyServer(function(input, output, session) {
                  aes(xintercept=avg),
                  color="blue") +
       facet_grid(School2~grade_level) + 
-      scale_fill_manual(values = c("#7FC97F",
-                                   "#BEAED4",
-                                   "#FDC086",
-                                   "#FFFF99"
-      )
-      ) +
+      scale_fill_manual(values = colors) +
       theme_bw() + 
       theme(legend.position="bottom")
     

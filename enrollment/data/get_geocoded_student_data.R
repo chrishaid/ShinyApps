@@ -15,6 +15,7 @@ require(ggmap)
 require(dplyr)
 require(stringr)
 require(lubridate)
+require(RColorBrewer)
 
 
 info(logger, "Reading Silo configuration")
@@ -78,7 +79,8 @@ kcs<-read.csv(file="kcs_locations.csv")
 kcs<-kcs %>% mutate(schoolid=SchoolID)
 
 info(logger, "Getting student distances form home to school from Google.")
-stu_school<-stu_lat_lon %>% left_join(kcs, by="schoolid")
+stu_school<-stu_lat_lon %>% left_join(kcs, by="schoolid") %>%
+  mutate(Address.x = gsub("#", "", Address.x))
 
 distances<-mapdist(from=as.character(stu_school$Address.x), to = as.character(stu_school$Address.y))
 
@@ -86,7 +88,7 @@ distances<-filter(distances, !duplicated(distances))
 
 stu_school_distances<-left_join(stu_school, distances, by=c("Address.x" = "from"))
 
-info(logger, "Munginf student data in prep for final save")
+info(logger, "Munging student data in prep for final save")
 
 # This function matches schoolid's to school initials
 schools<-function(x){
@@ -108,7 +110,7 @@ stus <- stu_school_distances %>%
          School = schools(as.character(SchoolID)),
          School=factor(School, levels = c("KAP", "KAMS", "KCCP", "KBCP")))
 
-colors<-brewer.pal(4, "Accent")
+colors<-c("purple", "#439539", "#60A2D7", "#C49A6C")
 
 stus2 <- stus %>% 
   mutate(fillColor=colors[match(School, c("KAP", "KAMS", "KCCP", "KBCP"))],
@@ -122,7 +124,8 @@ stus2 <- stus %>%
   #select(lat, lon, fillColor=color, popup) %>%
   filter(!(is.na(lat)|is.na(lon)))
 
-save(stus2, stus, stu_school_distances, kcs, file="gis_students.Rda")
+
+save(stus2, stus, stu_school_distances, kcs, colors, file="gis_students.Rda")
 
 info("Telling Shiny-server to restart.")
 system("touch ../restart.txt")
