@@ -9,8 +9,8 @@ subjs <-  list("Mathematics",
                )
 grades <- c(0:8)
 
-seasons<-c("Spring - Winter",
-           "Spring - Spring",
+seasons<-c("Spring - Spring",
+           "Spring - Winter",
            "Fall - Spring",
            "Fall - Winter",
            "Winter - Spring",
@@ -88,6 +88,7 @@ shinyUI(fluidPage(
                       selectInput(inputId="selectDBSeason",
                                   label="Growth Season:",
                                   choices=seasons,
+                                  selected = "Spring"
                                   )
                       ),
                column(4,
