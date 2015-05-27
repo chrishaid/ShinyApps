@@ -8,6 +8,9 @@
 # ignore excel files
 *.xls
 
+# ingore ff files
+*.ff
+
 # Ignore log directories or files
 log/
 *.log

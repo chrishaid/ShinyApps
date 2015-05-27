@@ -77,6 +77,7 @@ if("no" %in% args[2]){
 if("no" %in% args[3]){
   message("Not importing current roster.")
 } else {
+  message('Importing current roster.')
   source('current.roster.R')
   if("no" %in% args[2]) load("map_all.Rdata")
   source('../munge/04-current_roster.R')

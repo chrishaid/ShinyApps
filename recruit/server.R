@@ -7,7 +7,7 @@ addResourcePath('static', '/var/www/')
 ####  Sessionwide Data ####
 # CPS Impact ####
 message('Get recruitement and application data from google spreadsheet')
-apps.googurl <- getURL(read.dcf('config//ps.dcf', fields='APPS')[1])
+apps.googurl <- getURL(read.dcf('config//ps.dcf', fields='APPS2')[1])
 apps <- read.csv(textConnection(apps.googurl))
 
 apps<-apps %>% mutate(Focus = ((Schl=="KAP" & Gr =="5") |

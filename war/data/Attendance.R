@@ -27,13 +27,13 @@ date.second <- lubridate::today() #
 message("Constructin SQL statement . . . ")
 sql.statement<-paste("SELECT 
     m.schoolid, 
-    m.grade_level,
+                     m.grade_level,
                      m.calendardate, 
                      m.STUDENT_NUMBER AS StudentID, 
                      m.lastfirst,
                      CASE 
-                      WHEN m.enroll_status=0 THEN 1 
-                      ELSE 0
+                     WHEN m.enroll_status=0 THEN 1 
+                     ELSE 0
                      END AS Currently_Enrolled,
                      m.Enrolled,
                      m.home_room,
@@ -42,7 +42,7 @@ sql.statement<-paste("SELECT
                      a.Presence_Status_CD,
                      a.COURSE_CREDIT_POINTS,
                      CASE 
-                     WHEN	a.Presence_Status_CD = 'Absent' THEN a.COURSE_CREDIT_POINTS 
+                     WHEN  a.Presence_Status_CD = 'Absent' THEN a.COURSE_CREDIT_POINTS 
                      ELSE 0 
                      END as Absent
                      FROM (
