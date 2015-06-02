@@ -19,6 +19,7 @@ shinyUI(bootstrapPage(
   h6(update_time_stamp),
   p(em("The map takes about 10 seconds to load; your patience will be rewarded!")),
   br(), 
+  chartOutput('map_test', 'leaflet'),
   #tags$link(href='style.css', rel='stylesheet'),
   #tags$script(src='app.js'),
   #istyle the abosoulte panel
@@ -37,7 +38,7 @@ shinyUI(bootstrapPage(
   opacity: 0.95;
   transition-delay: 0;
   }'),
-  absolutePanel(id = "controls", class = "modal", fixed = TRUE, draggable = TRUE,
+  absolutePanel(id = "controls", class = "panel panel-default", fixed = TRUE, draggable = TRUE,
                 top = 60, left = "auto", right = 20, bottom = "auto",
                 width = 400, height = "auto",
                 
@@ -55,7 +56,6 @@ shinyUI(bootstrapPage(
                             multiple=TRUE),
                 plotOutput("geo_histogram", height = 250)
                 #plotOutput("scatterCollegeIncome", height = 250)
-                ),
-  chartOutput('map_test', 'leaflet')
+                )
   )
 )
