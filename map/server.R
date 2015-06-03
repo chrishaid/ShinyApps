@@ -15,8 +15,8 @@ require(data.table)
 require(grid)
 require(ggplot2)
 require(stringr)
-require(shinysky)
-require(shinyIncubator)
+#require(shinysky)
+#require(shinyIncubator)
 library(mapvisuals)
 
 #load MAP Helper functions
@@ -31,7 +31,7 @@ addResourcePath('static', '/var/www/')
 #need to load one-time per session.
 log("Loading dataset...")
 
-load("data/map_FW.Rdata")
+#load("data/map_FW.Rdata")
 load("data/map_all.Rdata")
 load("data/map_all_growth.Rdata")
 load("data/map_all_growth_sum.Rdata")
@@ -62,55 +62,7 @@ shinyServer(function(input, output, session) {
   log("Server init.")
   
   
-  output$schools<-renderUI({
-    schls<-map.F13W14[,unique(SchoolInitials)]
-    
-    selectInput("school", 
-                "Select School", 
-                schls, 
-                selected=schls[1])
-    }
-    )
-  
-  getSubjects <- reactive({dt<-map.F13W14[SchoolInitials==input$school, 
-                                    unique(Subject)]
-                           return(dt)}
-                          )
-  
 
-  
-  output$subjects <- renderUI({
-    selectInput("subject",
-                "Select Subject",
-                choices = getSubjects(),
-                selected="Reading")
-  }
-  )
-  
-  getGrades <- reactive({dt<-map.F13W14[SchoolInitials==input$school & 
-                                        Subject==input$subject, 
-                                        unique(Fall_Grade)]
-                           return(dt)}
-  )
-  output$grades <- renderUI({
-    selectInput("grade",
-                "Select Grade",
-                choices = getGrades(),
-                selected=getGrades()[1]
-                )
-  }
-  )
-
-  getData <- reactive(function(){
-    log("Subsetting dataset...")
-    map.F13W14[Fall_Grade     == input$grade & 
-               Subject        == input$subject & 
-               SchoolInitials == input$school
-             ]
-    
-  })
-  
-   
 # Main Table ####
 output$main_table <- renderDataTable({
    
@@ -128,12 +80,12 @@ output$main_table <- renderDataTable({
                 "Season 2 RIT" = TestRITScore.2, 
                 "Season 2 Percentile"=TestPercentile.2)] 
    }, 
-   options = list(bSortClasses=TRUE,
-                  aLengthMenu = list(c(5,25, 50, 100, -1), 
+   options = list(orderClasses=TRUE,
+                  lengthMenu = list(c(5,25, 50, 100, -1), 
                                      list(5,25,50,100,'All')
                                      ),
-                  iDisplayLength = 50,
-                  "sDom"='T<"clear">lfrtip',
+                  pageLength = 50,
+                  "dom"='T<"clear">lfrtip',
                   "oTableTools"=list(
                     "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
                     )
@@ -188,12 +140,12 @@ getSummaryTable <- reactive({
 output$sum_table <-renderDataTable({
   getSummaryTable()
   },
-  options = list(bSortClasses=TRUE,
-                 aLengthMenu = list(c(5,25, 50, 100, -1), 
+  options = list(orderClasses=TRUE,
+                 lengthMenu = list(c(5,25, 50, 100, -1), 
                                     list(5,25,50,100,'All')
                                     ),
-                 iDisplayLength = 50,
-                 "sDom"='T<"clear">lfrtip',
+                 pageLength = 50,
+                 "dom"='T<"clear">lfrtip',
                  "oTableTools"=list(
                    "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
                    )
@@ -220,12 +172,12 @@ output$reg_sum_table <-renderDataTable({
 output$dashboard_tested <- renderDataTable({
   tested.summary
 },
-options = list(bSortClasses=TRUE,
-               aLengthMenu = list(c(5, 10, 15, -1), 
+options = list(orderClasses=TRUE,
+               LengthMenu = list(c(5, 10, 15, -1), 
                                   list(5, 10, 15, 'All')
                ),
-               iDisplayLength = 50,
-               "sDom"='T<"clear">lfrtip',
+               pageLength = 50,
+               "dom"='T<"clear">lfrtip',
                "oTableTools"=list(
                  "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
                )
@@ -234,7 +186,7 @@ options = list(bSortClasses=TRUE,
 # Dashboard panel plot ####
 output$dashboard_panel <- renderPlot({
   
-  withProgress(session, min=1, max=10, {
+  withProgress(min=1, max=10, {
        setProgress(message = 'Loading MAP data',
                       detail = 'This may take a while...')
    
@@ -300,9 +252,14 @@ output$dashboard_panel <- renderPlot({
            ylab(y.label)   
        }
        
-       
+  # flush session if starting because data load is slower than visualization load 
+  # (TO DO: check depenencies)
+  if (values$starting) invalidateLater(1000, session)
   
-  print(p)
+  #Trysuppresses need atomic vector or data frame error on initial load from 
+  # data not being loaded up yet
+  try(print(p), silent = TRUE)
+  
   setProgress(value = 9, detail="Drawing visualization!!!")
   
   })

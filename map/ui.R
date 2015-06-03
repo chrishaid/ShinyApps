@@ -1,6 +1,6 @@
 library(shiny)
-require(shinysky)
-require(shinyIncubator)
+#require(shinysky)
+#require(shinyIncubator)
 schools <- list("Region", "KAP", "KAMS", "KCCP", "KBCP")
 sys <- list("2014-2015","2013-2014", "2012-2013", "2011-2012")
 subjs <-  list("Mathematics", 
@@ -63,24 +63,6 @@ shinyUI(fluidPage(
   p(em(update_time_stamp)),
   br(),
   tabsetPanel(
-#     tabPanel("Waterfalls",
-#              h3("Waterfall Charts", span(class="label label-default","New")),
-#              fluidRow(
-#                column(4, uiOutput("schools")),
-#                column(4, uiOutput("subjects")),
-#                column(4, uiOutput("grades"))
-#                ),
-#              hr(),
-#              fluidRow(
-#                br(),
-#                column(12, 
-#                 #      busyIndicator("Chasing waterfalls! Please be patient.", wait = 1000),
-#                   progressInit(),
-#                   plotOutput(outputId = "main_plot", height = "1000px")
-#                       )
-#                )
-#              ),
-#     
     tabPanel("Visualization",
              h3("MAP Performance over Time"),
              fluidRow(
