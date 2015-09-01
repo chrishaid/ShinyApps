@@ -6,15 +6,24 @@ addResourcePath('static', '/var/www/')
 
 ####  Sessionwide Data ####
 # CPS Impact ####
-message('Get recruitement and application data from google spreadsheet')
-apps.googurl <- getURL(read.dcf('config//ps.dcf', fields='APPS2')[1])
-apps <- read.csv(textConnection(apps.googurl))
+require(googlesheets)
 
-apps<-apps %>% mutate(Focus = ((Schl=="KAP" & Gr =="5") |
-                        (Schl=="KAMS" & Gr== "6") | 
-                        (Schl=="KAMS" & Gr== "6") |
-                        (Schl=="KCCP" & Gr %in% c("5","6")) |
-                        (Schl=="KBCP" & Gr %in% c("5","6"))) 
+# Authorize with token
+gs_auth(token="config/gs_token.rds")
+
+message('Get recruitement and application data from google spreadsheet')
+sheetkey <- read.dcf('config//ps.dcf', fields='SHEET_KEY')[1]
+
+sheet <- gs_key(sheetkey)
+
+apps<-sheet %>% gs_read(ws = "IDEA")
+
+
+apps<-apps %>% mutate(Focus = ((school=="KAP" & grade =="5") |
+                        (school=="KAMS" & grade== "6") | 
+                        (school=="KAMS" & grade== "6") |
+                        (school=="KCCP" & grade %in% c("5","6")) |
+                        (school=="KBCP" & grade %in% c("5","6"))) 
                         ) 
 
 message('Munchge recruitment /  applications table')
@@ -68,7 +77,7 @@ ggApps<-ggplot(apps %>% filter(Grade!="All"),
   ylab("Differnece (2015-16 and 2013-14)")
 
 
-regs_on<-FALSE
+regs_on<-TRUE
 if (regs_on){
   # Registration ####
   message("Getting regs data")
@@ -108,11 +117,12 @@ if (regs_on){
              color="black", 
              stat="identity") +
     geom_bar(aes(y=Filled),
-             fill="black", 
-             color="black", 
-             stat="identity") +
+             fill="green", 
+             color="green", 
+             stat="identity",
+             alpha = .5) +
     geom_text(aes(x=Grade, y=Available-3, 
-                  label=paste0("Percent Filled\n= ", Pct, "%")
+                  label=paste0(Pct, "% Filled")
     ),
     vjust=1
     ) +
