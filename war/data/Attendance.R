@@ -20,7 +20,7 @@ drvr <- JDBC(driverClass = "oracle.jdbc.driver.OracleDriver",
 pspw <- as.list(read.dcf("config/ps.dcf", all=TRUE)) #read DCF with configuration settings
 
 # Construct SQL statement based today's date
-date.first  <- "2014-08-18" # first day of school year
+date.first  <- pspw$FIRST_DAY # first day of school year
 date.second <- lubridate::today() # 
 
 
