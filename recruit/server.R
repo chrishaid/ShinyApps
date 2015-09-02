@@ -113,14 +113,14 @@ if (regs_on){
   ggRegs <-
     ggplot(regs2 %>% filter(Grade %in% c("K", "5")), 
            aes(x=Grade, y=Available)) + 
-    geom_bar(fill=NA, 
-             color="black", 
-             stat="identity") +
     geom_bar(aes(y=Filled),
              fill="green", 
              color="green", 
              stat="identity",
              alpha = .5) +
+    geom_bar(fill=NA, 
+             color="black", 
+             stat="identity") +
     geom_text(aes(x=Grade, y=Available-3, 
                   label=paste0(Pct, "% Filled")
     ),
