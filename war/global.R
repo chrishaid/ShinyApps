@@ -12,6 +12,7 @@ library(xtable)
 #require(shinyIncubator)
 #require(plyr)
 require(dplyr)
+require(Cairo)
 
 
 # source helper functions:

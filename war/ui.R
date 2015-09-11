@@ -42,7 +42,7 @@ shinyUI(
                      tabPanel(title="Daily",
                               h4("Daily Enrollment and Attendance by School"),
                               fluidRow(
-                                column(4,
+                                column(3,
                                        dateRangeInput("attDates", 
                                                       "Select Dates:",
                                                       start=last6weeks,
@@ -52,11 +52,15 @@ shinyUI(
                                        )
                                 ),
                                 column(2,
-                                       radioButtons("attSchoolvsHR",
+                                       selectizeInput("attSchoolvsHR",
                                                     "Show attendance by:",
-                                                    c("School"="school",
+                                                    choices = c(
+                                                      " " = "nada",
+                                                      "School"="school",
                                                       "Home Room" = "hr"),
-                                                    select="school"
+                                                    selected=NULL,
+                                                   multiple=FALSE,
+                                                   options=NULL
                                        )
                                 ),
                                 column(2, 
@@ -74,8 +78,14 @@ shinyUI(
                                        )
                                 ),
                                 column(2,uiOutput("grades_hrs")),
-                                column(2, uiOutput("home_rooms"))
+                                column(3, uiOutput("home_rooms"))
+                                
                               ),
+                              fluidRow(
+                                column(3),
+                                column(1, actionButton("hrs_button", "Generate Plot/Table"))
+                                ),
+                              hr(),
                               tabsetPanel(
                                 tabPanel(title="Enrollment & Attendance", 
                                          fluidRow(
