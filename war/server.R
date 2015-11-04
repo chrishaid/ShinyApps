@@ -851,7 +851,9 @@ output$suspensions_viz <- renderPlot({
               vjust=0,
               size=4) +
     facet_grid(Type~School) +
-    scale_color_manual(values = c("#C49A6C", "#17345B")) +
+    scale_color_manual(values = c("#CFCCC1",
+                                  "#C49A6C", 
+                                  "#17345B")) +
     theme_bw()
   
   p

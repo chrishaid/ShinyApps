@@ -113,12 +113,21 @@ susp<-collect(ill.participants_consequences) %>%
 
 mons<-c("Aug", "Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul")
 
+SY1314 <- interval(ymd("130801"), ymd("140731"))
+SY1415 <- interval(ymd("140801"), ymd("150731"))
+
+
+
 susp_plot_data <- susp %>% 
   mutate(Type=ifelse(code_id %in% c(75,79), "ISS", "Suspension")) %>%
   group_by(School, date_assigned, Type) %>% 
   summarize(N=n()) %>%
   mutate(Month_Year=floor_date(date_assigned,"month"),
-         SY=ifelse(date_assigned >= ymd("140818"), "SY14-15", "SY13-14")) %>%
+         SY_1 = "SY15-16",
+         SY_2 = ifelse(date_assigned %within% SY1415, "SY14-15", SY_1),
+         SY = ifelse(date_assigned %within% SY1314, "SY13-14", SY_2)
+         ) %>%
+  select(-SY_1, -SY_2) %>%
   ungroup %>%
   group_by(School, Month_Year, SY, Type) %>%
   summarize(N=n()) %>%
