@@ -820,12 +820,21 @@ xferplot2.nm<-filter(xferplot.nm,  !(is.na(Value) & Year=="SY14-15"))
  load("data/suspensions.Rdata")
 
 message("Loading Illuminate suspensions data")
+
+SY1314 <- interval(ymd("130801"), ymd("140731"))
+SY1415 <- interval(ymd("140801"), ymd("150731"))
+
 susp.dt <-susp %>%
   mutate(Referrer = paste(staff_last_name, 
                           staff_first_name),
-         SY=ifelse(date_assigned >= ymd("140818"), "SY14-15", "SY13-14"),
-         grade_level=ifelse(SY=="SY13-14", as.integer(grade_level)-1, as.integer(grade_level))
-  ) %>%
+         SY_1 = "SY15-16",
+         SY_2 = ifelse(date_assigned %within% SY1415, "SY14-15", SY_1),
+         SY = ifelse(date_assigned %within% SY1314, "SY13-14", SY_2),
+         grade_level_1 = ifelse(SY=="SY13-14", as.integer(grade_level)-2, as.integer(grade_level)),
+         grade_level=ifelse(SY=="SY14-15", as.integer(grade_level)-1, as.integer(grade_level_1))
+         ) %>%
+  select(-SY_1, -SY_2, -grade_level_1) %>%
+  arrange(desc(date_assigned)) %>%
   select("School Year" = SY,
          School,
         "First Name" = stu_first_name,
@@ -836,7 +845,8 @@ susp.dt <-susp %>%
          "Consequence" = code_translation,
          "Duration" = length,
          Referrer) %>%
-  as.data.frame
+  as.data.frame 
+  
 
 output$suspensions_viz <- renderPlot({
   p<-ggplot(as.data.frame(susp_plot_data), aes(x=Month, y=Cum_N)) + 
