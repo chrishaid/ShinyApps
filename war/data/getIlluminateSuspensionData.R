@@ -130,7 +130,7 @@ susp_plot_data <- susp %>%
   select(-SY_1, -SY_2) %>%
   ungroup %>%
   group_by(School, Month_Year, SY, Type) %>%
-  summarize(N=n()) %>%
+  summarize(N=sum(N)) %>%
   ungroup %>%
   group_by(School, SY, Type) %>%
   mutate(Cum_N=with_order(Month_Year, cumsum, N),
