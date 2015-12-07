@@ -33,13 +33,13 @@ source('src/attendence_tables.R', local=TRUE)
 
 message('Reading and munging transfer data')
 
-Enrolled.121003 <- read.csv("data/Enrolled.121003.csv")
 Enrolled.131001 <- read.csv("data/Enrolled.131001.csv")
 Enrolled.141001 <- read.csv("data/Enrolled.141001.csv")
+Enrolled.151001 <- read.csv("data/Enrolled.151001.csv")
 
-source('data/Xfers.HSR.1213.R', local=TRUE)
 source('data/Xfers.HSR.1314.R', local=TRUE)
 source('data/Xfers.HSR.1415.R', local=TRUE)
+source('data/Xfers.HSR.1516.R', local=TRUE)
 
 message('Creating transfer and suspension tables')
 source('munge/02-Tranfers_Prep.R', local=TRUE)
@@ -48,7 +48,7 @@ source('munge/02-Tranfers_Prep.R', local=TRUE)
 
 #### Date information ####
 message("Getting first day of school and current day information")
-date.first  <- "2014-08-16" # first day of school year
+date.first  <- "2015-08-17" # first day of school year
 date.second <- lubridate::today() # 
 
 title.date<-paste(lubridate::month(date.second, 

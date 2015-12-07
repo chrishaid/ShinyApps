@@ -638,9 +638,9 @@ shinyServer(function(input, output, session) {
   source('src//transfer_tables.R', local=TRUE)
   
   message("Binding Enrolled students tables")
-  enrolled<-rbind(group_by(Enrolled.121003, SCHOOLID) %>%
+  enrolled<-rbind(group_by(Enrolled.151001, SCHOOLID) %>%
                     dplyr::summarise(N=n()) %>% 
-                    mutate(Year="SY12-13"), 
+                    mutate(Year="SY15-16"), 
                   group_by(Enrolled.131001, SCHOOLID) %>% 
                     dplyr::summarise(N=n()) %>% 
                     mutate(Year="SY13-14"),
@@ -712,9 +712,11 @@ message("Combining transerfed and enrolled tables into xferplot")
   #                       )
   #                     )
 
-xferplot2<-filter(xferplot, !(is.na(Value) & Year=="SY14-15"))
-xferplot2.nm<-filter(xferplot.nm,  !(is.na(Value) & Year=="SY14-15"))
+xferplot2<-filter(xferplot, !(is.na(Value) & Year=="SY15-16"))
+xferplot2.nm<-filter(xferplot.nm,  !(is.na(Value) & Year=="SY15-16"))
+
   message("Creating Transfer plot")
+  
   TransferPlot <- ggplot(data=filter(xferplot2, Variable=="Ceiling"), 
          aes(x=Month, y=Value)) + 
     geom_area(data=filter(xferplot2, Variable!="Ceiling"), 
@@ -744,7 +746,7 @@ xferplot2.nm<-filter(xferplot.nm,  !(is.na(Value) & Year=="SY14-15"))
                   label=Value), 
               size=3,
               vjust=1) +
-    facet_grid(Year~School, scale="free_y") +
+    facet_grid(Year~School, scale="free_y", as.table=FALSE) +
     scale_fill_manual(values = c("purple",  #KCCP 
                                  "#439539", #KAMS
                                  "#60A2D7", #KCCP

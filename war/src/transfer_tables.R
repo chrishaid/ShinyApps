@@ -15,7 +15,7 @@ Xfersreasons<-data.frame(EXITCODE=as.integer(c(1:11,99)),Reason=c("Dropped Out",
                                                                     "Don't Know", 
                                                                     "Xfer Other KIPP", 
                                                                     "DNA"))
-Xfer.students.table <- Xfers.HSR.1415 %>%  
+Xfer.students.table <- Xfers.HSR.1516 %>%  
   mutate(EXITCODE=as.integer(as.character(EXITCODE))) %>%
   left_join(Xfersreasons, by="EXITCODE")
 

@@ -12,7 +12,7 @@ drvr <- JDBC("oracle.jdbc.driver.OracleDriver", "/var//lib/jdbc//ojdbc6.jar","")
 
 #pscon <- dbConnect(drvr,pspw$SERVER,pspw$UID,pspw$PWD) # connect to server
 
-message('Getting 10/03/12 attendance')
+message('Getting 10/01/15 attendance')
 
 sql.statement<-"SELECT
 m.SchoolID,
@@ -33,11 +33,11 @@ s.EXITCOMMENT
 FROM PS_Membership_Defaults m
 JOIN STUDENTS s
 ON m.studentid = s.id
-WHERE m.calendardate = '03-OCT-12'
+WHERE m.calendardate = '01-OCT-15'
 ORDER BY schoolid, grade_level
 "
 
-Enrolled.121003<-read.jdbc.ffdf(query=sql.statement,
+Enrolled.151001<-read.jdbc.ffdf(query=sql.statement,
                dbConnect.args = list( 
                  drv=drvr,
                  url=pspw$SERVER,
@@ -50,5 +50,5 @@ Enrolled.121003<-read.jdbc.ffdf(query=sql.statement,
                )
 
 
-message("Writing attendance data to data/Enrolled.121003.csv")
-write.csv.ffdf(Enrolled.121003, 'data/Enrolled.121003.csv')
+message("Writing attendance data to data/Enrolled.151001.csv")
+write.csv.ffdf(Enrolled.151001, 'data/Enrolled.151001.csv')
