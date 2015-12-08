@@ -51,9 +51,9 @@ students<-dbGetQuery(conn, qry)
 
 
 info(logger, "Extracting latitude and longitude from geocode field")
-lat<-str_extract_all(students$geocode, perl("\\S?\\d{2}\\S\\d+(?=\\S\\s)"))
+lat<-str_extract_all(students$geocode, regex("\\S?\\d{2}\\S\\d+(?=\\S\\s)"))
 
-lon<-str_extract_all(students$geocode, perl("\\S?\\d{2}\\S\\d+$"))
+lon<-str_extract_all(students$geocode, regex("\\S?\\d{2}\\S\\d+$"))
 
 stu_lat_lon <- students %>%
   mutate(lat=as.numeric(cbind(lat)),

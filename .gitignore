@@ -3,6 +3,8 @@
 #ignore .Rdata files
 *.Rdata
 *.Rda
+*.rda
+*.rdata
 #ignore DCF files 
 *.dcf
 # ignore excel files
