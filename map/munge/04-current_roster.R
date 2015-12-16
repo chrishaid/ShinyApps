@@ -22,7 +22,7 @@ grade.summary<-dplyr::summarise(current.roster, N=n())
 
 
 current.term<-
-  dplyr::filter(map.all, TermName=="Spring 2014-2015") %>% 
+  dplyr::filter(map.all, TermName=="Winter 2015-2016") %>% 
   dplyr::mutate(School=mapvisuals::abbrev(SchoolName, 
                                           exceptions=list(old="KAPS", 
                                                           new="KAP"))

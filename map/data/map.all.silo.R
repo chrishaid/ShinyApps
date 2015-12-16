@@ -16,7 +16,7 @@ conn <- dbConnect(drvr,
 message('Contacting server and querying results for all years')
 
 # get viewAllAssessments
-qry<-"SELECT * FROM NWEA..MAP$comprehensive#cps_included WHERE GrowthMeasureYN='TRUE'"
+qry<-"SELECT * FROM NWEA..MAP$comprehensive#plus_cps WHERE GrowthMeasureYN='TRUE'"
 map.all.silo<-dbGetQuery(conn, qry)
 
 

@@ -39,7 +39,7 @@ map.all<-cbind(map.all,
 
 years<-unique(map.all$Year2)
 
-map.SS<-rbindlist(lapply(years, 
+map.SS<-rbind_all(lapply(years, 
                          mapvisuals::s2s_match, 
                          .data=map.all, 
                          season1="Spring", 
@@ -48,7 +48,7 @@ map.SS<-rbindlist(lapply(years,
                          college.ready=T
                          )
                   )
-map.FS<-rbindlist(lapply(years, 
+map.FS<-rbind_all(lapply(years, 
                          mapvisuals::s2s_match,
                          .data=map.all, 
                          season1="Fall", 
@@ -57,7 +57,7 @@ map.FS<-rbindlist(lapply(years,
                           college.ready=T
                                  )
                           )
-map.FW<-rbindlist(lapply(years, 
+map.FW<-rbind_all(lapply(years, 
                          mapvisuals::s2s_match, 
                         .data=map.all, 
                          season1="Fall", 
@@ -66,7 +66,7 @@ map.FW<-rbindlist(lapply(years,
                          college.ready=T
                                )
                         )
-map.WS<-rbindlist(lapply(years,
+map.WS<-rbind_all(lapply(years,
                          mapvisuals::s2s_match, 
                          .data=map.all, 
                          season1="Winter", 
@@ -75,7 +75,7 @@ map.WS<-rbindlist(lapply(years,
                          college.ready=T
                          )
                   )
-map.FF<-rbindlist(lapply(years, 
+map.FF<-rbind_all(lapply(years, 
                          mapvisuals::s2s_match, 
                          .data=map.all, 
                          season1="Fall", 
@@ -85,7 +85,7 @@ map.FF<-rbindlist(lapply(years,
                          )
                   )
 
-map.SW<-rbindlist(lapply(years, 
+map.SW<-rbind_all(lapply(years, 
                          mapvisuals::s2s_match, 
                          .data=map.all, 
                          season1="Spring", 
@@ -95,11 +95,11 @@ map.SW<-rbindlist(lapply(years,
                          )
                   )
 
-map.all.growth<-rbindlist(list(map.SS, map.FS, map.FW, map.WS, map.FF, map.SW))
+map.all.growth<-rbind_all(list(map.SS, map.FS, map.FW, map.WS, map.FF, map.SW))
 
 rm(map.SS, map.FS, map.FW, map.WS, map.FF, map.SW)
 
-map.all.growth.sum<-map.all.growth[,list("N (both seasons)"= .N, 
+map.all.growth.sum<-data.table(map.all.growth)[,list("N (both seasons)"= .N, 
                     "# >= Typical" = sum(MetTypical),  
                     "% >= Typical" = round(sum(MetTypical)/.N,2), 
                     "# >= College Ready" = sum(MetCollegeReady),
@@ -115,18 +115,18 @@ map.all.growth.sum<-map.all.growth[,list("N (both seasons)"= .N,
                     ),
                     by=list(SY.2, 
                             GrowthSeason, 
-                            SchoolInitials, 
+                            SchoolInitials.2, 
                             Grade.2, 
                             CohortYear.2,
                             MeasurementScale)
                     ]
 
 setnames(map.all.growth.sum, 
-         c("SchoolInitials", "Grade.2", "MeasurementScale", "SY.2", "CohortYear.2"),
+         c("SchoolInitials.2", "Grade.2", "MeasurementScale", "SY.2", "CohortYear.2"),
          c("School", "Grade", "Subject", "SY", "Class")
          )
 
-map.all.growth.sum.reg<-map.all.growth[,list("School"="Region",
+map.all.growth.sum.reg<-data.table(map.all.growth)[,list("School"="Region",
                                              "N (both seasons)"= .N, 
                                          "# >= Typical" = sum(MetTypical),  
                                          "% >= Typical" = round(sum(MetTypical)/.N,2), 
