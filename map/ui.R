@@ -1,6 +1,7 @@
 library(shiny)
-#require(shinysky)
-#require(shinyIncubator)
+require(DT)
+
+
 schools <- list("Region", "KAP", "KAMS", "KCCP", "KBCP")
 sys <- list("2015-2016", "2014-2015","2013-2014", "2012-2013", "2011-2012")
 subjs <-  list("Mathematics", 
@@ -54,10 +55,10 @@ update_time_stamp<-lubridate::stamp("NWEA MAP data last updated on Tuesday, Sept
 
 shinyUI(fluidPage(
   tags$head( 
-    tags$link(href='static/css/shinyprogress.css', rel="stylesheet", type="text/css"), 
-    tags$link(href='static/css/dataTables.tableTools.css', rel="stylesheet", type="text/css"), 
-    tags$script(src='static/js/jquery.dataTables.js'),
-    tags$script(src='static/js/dataTables.tableTools.js')
+    tags$link(href='static/css/shinyprogress.css', rel="stylesheet", type="text/css")
+    #tags$link(href='static/css/dataTables.tableTools.css', rel="stylesheet", type="text/css"), 
+    #tags$script(src='static/js/jquery.dataTables.js'),
+    #tags$script(src='static/js/dataTables.tableTools.js')
     ), 
   br(),
   p(em(update_time_stamp)),
@@ -181,10 +182,14 @@ shinyUI(fluidPage(
                       )
              )
       ),
-    tabPanel("Student Data",
+    tabPanel("Historical Scores",
+             h3("Historical Score Look-up", span(class="label label-default","New")),
+             DT::dataTableOutput("hist_scores")
+             ),
+    tabPanel("Student Growth Data",
              h3("Student-level Summary", span(class="label label-default","New")),
-             dataTableOutput("main_table")
-             )
+             DT::dataTableOutput("main_table")
+    )
     )
   )
 )

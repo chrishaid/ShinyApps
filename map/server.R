@@ -15,8 +15,7 @@ require(data.table)
 require(grid)
 require(ggplot2)
 require(stringr)
-#require(shinysky)
-#require(shinyIncubator)
+require(DT)
 library(mapvisuals)
 
 #load MAP Helper functions
@@ -64,10 +63,11 @@ shinyServer(function(input, output, session) {
   
 
 # Main Table ####
-output$main_table <- renderDataTable({
-   
-  map.all.growth[,list("School Year" =SY,
-                "Growth Season"=GrowthSeason,
+output$main_table <- DT::renderDataTable(
+  map.all.growth %>% 
+    arrange(desc(SY), SchoolInitials, Grade, MeasurementScale, GrowthSeason) %>%
+    select("School Year" = SY,
+                "Growth Season (Season 1 - Season 2)"=GrowthSeason,
                 "School" = SchoolInitials, 
                 Grade, 
                 "Last Name" = StudentLastName, 
@@ -78,19 +78,33 @@ output$main_table <- renderDataTable({
                 "Typical Target"=TypicalTarget,
                 "College Ready Target"= CollegeReadyTarget, 
                 "Season 2 RIT" = TestRITScore.2, 
-                "Season 2 Percentile"=TestPercentile.2)] 
-   }, 
-   options = list(orderClasses=TRUE,
-                  lengthMenu = list(c(5,25, 50, 100, -1), 
-                                     list(5,25,50,100,'All')
-                                     ),
-                  pageLength = 50,
-                  "dom"='T<"clear">lfrtip',
-                  "oTableTools"=list(
-                    "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
-                    )
-                  )
+                "Season 2 Percentile"=TestPercentile.2),
+  filter = "top",
+  rownames = FALSE,
+  options = list(autoWidth = TRUE)
    )
+  
+  output$hist_scores <- DT::renderDataTable(
+    map.all %>%
+      arrange(desc(SY), SchoolInitials, Grade, desc(MeasurementScale), Season) %>%
+      select("School Year" = SY,
+             "School" = SchoolInitials,
+             Grade, 
+             Season,
+             "Subject" = MeasurementScale,
+             "Student ID" = StudentID,
+             "First Name" = StudentFirstName, 
+             "Last Name" = StudentLastName, 
+             "RIT Score" = TestRITScore, 
+             "Percentile"=TestPercentile, 
+             "Date Taken" = TestStartDate,
+              "Taken @ KIPP?" = Tested_at_KIPP
+      ),
+    filter = "top",
+    rownames = FALSE,
+    options = list(autoWidth = TRUE)
+  )
+  
 
 
 # Summary Table ####  
@@ -169,20 +183,21 @@ output$reg_sum_table <-renderDataTable({
 
 # Dashboard ####
 # Dashboard numbers tested plot ####
-output$dashboard_tested <- renderDataTable({
-  tested.summary
-},
-options = list(orderClasses=TRUE,
-               LengthMenu = list(c(5, 10, 15, -1), 
-                                  list(5, 10, 15, 'All')
-               ),
-               pageLength = 50,
-               "dom"='T<"clear">lfrtip',
-               "oTableTools"=list(
-                 "sSwfPath"="static/swf/copy_csv_xls_pdf.swf"
-               )
-)
+output$dashboard_tested <- DT::renderDataTable(
+  datatable(tested.summary %>%
+    arrange(`% Tested`),
+  filter = "top",
+  rownames = FALSE,
+  options = list(pageLength = 100)
+  ) %>%
+  formatStyle(
+    '% Tested',
+    background = styleColorBar(tested.summary$`% Tested`, 'steelblue'),
+    backgroundSize = '100% 90%',
+    backgroundRepeat = 'no-repeat',
+    backgroundPosition = 'center'
   )
+)
 # Dashboard panel plot ####
 output$dashboard_panel <- renderPlot({
   
